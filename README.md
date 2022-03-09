@@ -1,9 +1,8 @@
 # Patience
-# Patience
-# Patience
-# Patience
-2 inch Rocket
 
-# Patience
-# Patience
-# Patience
+2 inch Rocket
+  Approximately:
+                  400m max altitude
+                  1 kg mass
+                  
+    
