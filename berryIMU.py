@@ -19,11 +19,26 @@
 from picamera import PiCamera
 import time
 import math
+import board
 import IMU
 import datetime
 import os
 import sys
 import RPi.GPIO as GPIO
+import busio
+from digitalio import DigitalInOut, Direction, Pull
+import adafruit_ssd1306
+import adafruit_rfm9x
+
+# Create the I2C interface.
+i2c = busio.I2C(board.SCL, board.SDA)
+
+CS = DigitalInOut(board.CE1)
+RESET = DigitalInOut(board.D25)
+spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
+rfm9x = adafruit_rfm9x.RFM9x(spi, CS, RESET, 915.0)
+rfm9x.tx_power = 23
+prev_packet = None
 
 #camera=PiCamera ()
 #time.sleep (2)
@@ -177,6 +192,9 @@ a = datetime.datetime.now()
 #camera.start_recording(file_name)
 #camera.wait_recording(5)
 #camera.stop_recording()
+beta = 0
+
+rfm9x.send(bytes('Communications online','utf-8'))
 
 while True:
 
@@ -299,7 +317,6 @@ while True:
     ##################### END Tilt Compensation ########################
 
 
-
     if 1:                       #Change to '0' to stop showing the angles from the accelerometer
         outputString += "#  ACCX Angle %5.2f ACCY Angle %5.2f ACCZ Angle %5.2f #  " % (AccXangle, AccYangle, AccZangle)
 
@@ -315,15 +332,19 @@ while True:
     if 0:                       #Change to '0' to stop  showing the angles from the Kalman filter
         outputString +="\t# kalmanX %5.2f   kalmanY %5.2f #" % (kalmanX,kalmanY)
     if 1:
-        outputString +="\t# Pitch %5.2f Roll %5.2f #" % (pitch, roll)
-    
-    if abs(pitch)>=1.3 or abs(roll)>=1.3:
+        outputString +="\t# Pitch %5.2f Roll %5.2f b %5.2f #" % (pitch, roll, beta)
+    if (abs(pitch)>=1.3 or abs(roll)>=1.3) and beta == 0:
         outputString +="\n Ignition"
         GPIO.output(26, 1)
+        strPitch=str(pitch)
+        GPIO.output(26, 1)
+        data = bytearray('Deployed \r\n', 'utf-8') #'Pitch: ' + strPitch, "utf-8") #bytes("pitch: \r", str(pitch), "utf-8")
+        rfm9x.send(data)
+        beta = 1
+        time.sleep(1)
     else:
         GPIO.output(26,0)
-                       
-        
+ 
     print(outputString)
     #slow program down a bit, makes the output more readable
     time.sleep(0.03)
