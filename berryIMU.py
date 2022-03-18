@@ -44,7 +44,11 @@ beta = 0
 CS = DigitalInOut(board.CE1)
 RESET = DigitalInOut(board.D25)
 spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
+<<<<<<< HEAD
 rfm9x = adafruit_rfm9x.RFM9x(spi, CS, RESET, 915.0, baudrate=115200)
+=======
+rfm9x = adafruit_rfm9x.RFM9x(spi, CS, RESET, 915.0, baudrate=9600)
+>>>>>>> 83178d8797a9245b6ace2a6c14438679b977d6eb
 rfm9x.tx_power = 23
 prev_packet = None
 IMU.detectIMU()     #Detect if BerryIMU is connected.
@@ -243,13 +247,13 @@ def Patience(RFsignal):
     if ((counter == 1) and blastoff is not None):
         if (sent == 0):
             sent = 1
-            rfm9x.send(bytes('Ready for takeoff \r\n', 'utf-8'))
+            rfm9x.send(bytes('Ready for takeoff ', 'utf-8'))
             
 #            time.sleep(0.50)
     if (counter == 2):
         if (command2Sent == 0):
             command2Sent = 1
-            rfm9x.send(bytes('TAKEOFF! \r\n', 'utf-8'))
+            rfm9x.send(bytes('TAKEOFF! ', 'utf-8'))
             GPIO.output(24,1)
             time.sleep(01.50)
         else:
@@ -257,7 +261,7 @@ def Patience(RFsignal):
     if (counter == 3):
         if (command3Send == 0):
             command3Send = 1
-            rfm9x.send(bytes('Deployment! \r\n', 'utf-8'))
+            rfm9x.send(bytes('Deployment! ', 'utf-8'))
             GPIO.output(26,1)
             time.sleep(01.50)
     if (counter == 4):
@@ -429,17 +433,10 @@ init = 0
 while True:
     Initialize = rfm9x.receive()
     if Initialize is not None:
-        packet_text = str(Initialize, "utf-8")
-        print("Received (utf-8): {0}".format(packet_text))
         Patience(Initialize)
         init = 1
-       # rfm9x.send(rply)
     elif ((Initialize is None) and (init != 1)):
         init = 0 
     else:
         Patience(None)
- #       rfm9x.send(rply)
-#         if (packet_text is not None):
-#             counter += 1
-#             packet_text = None
             

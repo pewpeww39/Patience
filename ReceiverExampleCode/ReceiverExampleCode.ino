@@ -76,57 +76,23 @@ void loop()
       //      RH_RF95::printBuffer("Received: ", buf, len);
       Serial.print("Got: ");
       Serial.println((char*) buf);
-      //      if ( strstr((char*)buf, "Communications online"))
-      //
-      //
-      //                  //      Serial.print("RSSI: ");
-      //                  //      Serial.println(rf95.lastRssi(), DEC);
-      //
-      //                  // Send a reply
-      //                  uint8_t data[] = "And hello back to you";
-      //                  rf95.send(data, sizeof(data));
-      //                  rf95.waitPacketSent();
-      //                  //      Serial.println("Sent a reply");
-      //                  digitalWrite(LED, LOW);
-      //                }
-      //                  else
-      //                  {
-      //                  Serial.println("Receive failed");
-      //                }
-    }
-  }
-  if (Serial.available() > 0) {
-    int command = Serial.read() - '0';
-
-    switch (command)
-    {
-      case 1: {
-         // Serial.print("Ready for launch.");
-          uint8_t mesg[] = "Confirm Signal \r\n";
-          rf95.send(mesg, sizeof(mesg));
-          break;
-        }
-      case 2:
-        {
-         // Serial.print("Blast off!");
-          uint8_t mesg[] = "Blast Off!";
-          rf95.send(mesg, sizeof(mesg));
-          break;
-        }
-      case 3:
-        {
-         // Serial.print("Emergency Deployment!");
-          uint8_t mesg[] = "Deployment";
-          rf95.send(mesg, sizeof(mesg));
-          break;
-        }
-      case 4:
-      {
-        uint8_t mesg[] = "Reset";
-        rf95.send(mesg, sizeof(mesg));
-        }
-      default:
-        break;
-    }
-  }
+//      if ( strstr((char*)buf, "Communications online"))
+//                  
+//
+//                  //      Serial.print("RSSI: ");
+//                  //      Serial.println(rf95.lastRssi(), DEC);
+//
+//                  // Send a reply
+//                  uint8_t data[] = "And hello back to you";
+//                  rf95.send(data, sizeof(data));
+//                  rf95.waitPacketSent();
+//                  //      Serial.println("Sent a reply");
+//                  digitalWrite(LED, LOW);
+//                }
+//                  else
+//                  {
+//                  Serial.println("Receive failed");
+//                }
+                }
+                }
 }
