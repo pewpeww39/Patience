@@ -412,18 +412,11 @@ def Patience(RFsignal):
         outputString +="\n Ignition"
         counter = 3
         command3Send = 0
-        #GPIO.output(26, 1)
-        #strPitch=str(pitch)
-        #GPIO.output(26, 1)
-#        data = bytearray('Deployed ', 'utf-8')
-#        rfm9x.send(data)
         beta = 1
 #        time.sleep(2)
     elif (abs(pitch) >= 1.3 or abs(roll)>=1.3) and beta >= 5:
         GPIO.output(26, 0)
     print(outputString)
-    #slow program down a bit, makes the output more readable
-#    time.sleep(0.03)
     #camera.stop_recording()
     i2c = busio.I2C(board.SCL, board.SDA)
 init = 0
