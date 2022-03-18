@@ -100,3 +100,4 @@ while True:
 # 
 #     display.show()
     time.sleep(0.1)
+  
