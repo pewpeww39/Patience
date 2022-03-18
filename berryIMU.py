@@ -256,12 +256,16 @@ def Patience(RFsignal):
         if (command3Send == 0):
             command3Send = 1
             rfm9x.send(bytes('Deployment!                 \r', 'utf-8'))
+        if ((command3Send <= 5) and (beta <= 5)):
             GPIO.output(26,1)
-            time.sleep(01.50)
+            command3Send += 1
+            beta += 1
+           # time.sleep(01.50)
     if (counter == 4):
 #        if (command4Sent == 0):
 #            command4Sent == 1
         counter = 0
+        beta = 0
         sent = 0
         command2Sent = 0
         command3Send = 0
@@ -406,18 +410,17 @@ def Patience(RFsignal):
         outputString +="\t# Pitch %5.2f Roll %5.2f beta %5.2f counter %5.2f #" % (pitch, roll, counter, beta)
     if (abs(pitch)>=1.3 or abs(roll)>=1.3) and beta == 0:
         outputString +="\n Ignition"
-        #counter = 3
-        #command3Send = 0
-        GPIO.output(26, 1)
-        strPitch=str(pitch)
-        GPIO.output(26, 1)
-        data = bytearray('Deployed ', 'utf-8')
-        rfm9x.send(data)
+        counter = 3
+        command3Send = 0
+        #GPIO.output(26, 1)
+        #strPitch=str(pitch)
+        #GPIO.output(26, 1)
+#        data = bytearray('Deployed ', 'utf-8')
+#        rfm9x.send(data)
         beta = 1
-        time.sleep(2)
-    else:
-        GPIO.output(26,0)
- 
+#        time.sleep(2)
+    elif (abs(pitch) >= 1.3 or abs(roll)>=1.3) and beta >= 5:
+        GPIO.output(26, 0)
     print(outputString)
     #slow program down a bit, makes the output more readable
 #    time.sleep(0.03)
