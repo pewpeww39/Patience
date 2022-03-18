@@ -238,19 +238,16 @@ def Patience(RFsignal):
         packet_text = str(blastoff, "utf-8")
         print("Received (utf-8): {0}".format(packet_text))
         counter = counter + 1
-#        packet_text = None
-#    else:
-#         packet_text = None
+
     if ((counter == 1) and blastoff is not None):
         if (sent == 0):
             sent = 1
-            rfm9x.send(bytes('Ready for takeoff ', 'utf-8'))
+            rfm9x.send(bytes('Ready for takeoff                 \r', 'utf-8'))
             
-#            time.sleep(0.50)
     if (counter == 2):
         if (command2Sent == 0):
             command2Sent = 1
-            rfm9x.send(bytes('TAKEOFF! ', 'utf-8'))
+            rfm9x.send(bytes('TAKEOFF!                 \r', 'utf-8'))
             GPIO.output(24,1)
             time.sleep(01.50)
         else:
@@ -258,7 +255,7 @@ def Patience(RFsignal):
     if (counter == 3):
         if (command3Send == 0):
             command3Send = 1
-            rfm9x.send(bytes('Deployment! ', 'utf-8'))
+            rfm9x.send(bytes('Deployment!                 \r', 'utf-8'))
             GPIO.output(26,1)
             time.sleep(01.50)
     if (counter == 4):
@@ -428,11 +425,11 @@ def Patience(RFsignal):
     i2c = busio.I2C(board.SCL, board.SDA)
 init = 0
 while True:
-    Initialize = rfm9x.receive()
-    if Initialize is not None:
-        Patience(Initialize)
+    Comm = rfm9x.receive()
+    if Comm is not None:
+        Patience(Comm)
         init = 1
-    elif ((Initialize is None) and (init != 1)):
+    elif ((Comm is None) and (init != 1)):
         init = 0 
     else:
         Patience(None)
