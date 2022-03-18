@@ -82,7 +82,7 @@ GPIO.setup(26, GPIO.OUT, initial=0)
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(24, GPIO.OUT, initial = 0)
 
-print("Waiting to connect...\n")
+print("Waiting to connect...")
 #Kalman filter variables
 Q_angle = 0.02
 Q_gyro = 0.0015
