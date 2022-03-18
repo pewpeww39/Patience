@@ -242,12 +242,12 @@ def Patience(RFsignal):
     if ((counter == 1) and blastoff is not None):
         if (sent == 0):
             sent = 1
-            rfm9x.send(bytes('Ready for takeoff                 \r', 'utf-8'))
+            rfm9x.send(bytes('Ready for takeoff                      \r', 'utf-8'))
             
     if (counter == 2):
         if (command2Sent == 0):
             command2Sent = 1
-            rfm9x.send(bytes('TAKEOFF!                 \r', 'utf-8'))
+            rfm9x.send(bytes('TAKEOFF!                              \r', 'utf-8'))
             GPIO.output(24,1)
             time.sleep(01.50)
         else:
@@ -255,7 +255,7 @@ def Patience(RFsignal):
     if (counter == 3):
         if (command3Send == 0):
             command3Send = 1
-            rfm9x.send(bytes('Deployment!                 \r', 'utf-8'))
+            rfm9x.send(bytes('Deployment!                           \r', 'utf-8'))
         if ((command3Send <= 5) and (beta <= 5)):
             GPIO.output(26,1)
             command3Send += 1
