@@ -230,7 +230,7 @@ def Patience(RFsignal):
     global beta 
 
 #    while True:
-    blastoff = rfm9x.receive()
+    blastoff = RFsignal
     if blastoff is not None:
         packet_text = str(blastoff, "utf-8")
         print("Received (utf-8): {0}".format(packet_text))

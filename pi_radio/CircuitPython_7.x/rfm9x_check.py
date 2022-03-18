@@ -13,7 +13,7 @@ import busio
 from digitalio import DigitalInOut, Direction, Pull
 import board
 # Import the SSD1306 module.
-import adafruit_ssd1306
+#import adafruit_ssd1306
 # Import the RFM9x radio module.
 import adafruit_rfm9x
 
@@ -45,9 +45,9 @@ i2c = busio.I2C(board.SCL, board.SDA)
 #height = display.height
 
 # Configure RFM9x LoRa Radio
-CS = DigitalInOut(board.CE1)
-RESET = DigitalInOut(board.D25)
-spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
+CS = DigitalInOut(board.D3)
+RESET = DigitalInOut(board.D2)
+spi = busio.SPI(board.SCK2, MOSI=board.MOSI2, MISO=board.MISO2)
 
 while True:
     # Clear the image
