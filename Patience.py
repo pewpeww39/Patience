@@ -44,7 +44,8 @@ beta = 0
 CS = DigitalInOut(board.CE1)
 RESET = DigitalInOut(board.D25)
 spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
-rfm9x = adafruit_rfm9x.RFM9x(spi, CS, RESET, 915.0)
+rfm9x = adafruit_rfm9x.RFM9x(spi, CS, RESET, 915.0, baudrate=115200)
+rfm9x = adafruit_rfm9x.RFM9x(spi, CS, RESET, 915.0, baudrate=9600)
 rfm9x.tx_power = 23
 prev_packet = None
 IMU.detectIMU()     #Detect if BerryIMU is connected.
@@ -52,7 +53,7 @@ if(IMU.BerryIMUversion == 99):
     print(" No BerryIMU found... exiting ")
     sys.exit()
 IMU.initIMU()       #Initialise the accelerometer, gyroscope and compass
-rfm9x.send(bytes('Communications online \r\n','utf-8'))
+rfm9x.send(bytes('Communications online                 \r','utf-8'))
 
 gyroXangle = 0.0
 gyroYangle = 0.0
@@ -78,7 +79,7 @@ GPIO.setup(26, GPIO.OUT, initial=0)
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(24, GPIO.OUT, initial = 0)
 
-print("Waiting to connect...\n")
+print("Waiting to connect...")
 #Kalman filter variables
 Q_angle = 0.02
 Q_gyro = 0.0015
@@ -237,19 +238,16 @@ def Patience(RFsignal):
         packet_text = str(blastoff, "utf-8")
         print("Received (utf-8): {0}".format(packet_text))
         counter = counter + 1
-#        packet_text = None
-#    else:
-#         packet_text = None
+
     if ((counter == 1) and blastoff is not None):
         if (sent == 0):
             sent = 1
-            rfm9x.send(bytes('Ready for takeoff \r\n', 'utf-8'))
+            rfm9x.send(bytes('Ready for takeoff                      \r', 'utf-8'))
             
-#            time.sleep(0.50)
     if (counter == 2):
         if (command2Sent == 0):
             command2Sent = 1
-            rfm9x.send(bytes('TAKEOFF! \r\n', 'utf-8'))
+            rfm9x.send(bytes('TAKEOFF!                              \r', 'utf-8'))
             GPIO.output(24,1)
             time.sleep(01.50)
         else:
@@ -257,13 +255,17 @@ def Patience(RFsignal):
     if (counter == 3):
         if (command3Send == 0):
             command3Send = 1
-            rfm9x.send(bytes('Deployment! \r\n', 'utf-8'))
+            rfm9x.send(bytes('Deployment!                           \r', 'utf-8'))
+        if ((command3Send <= 5) and (beta <= 5)):
             GPIO.output(26,1)
-            time.sleep(01.50)
+            command3Send += 1
+            beta += 1
+           # time.sleep(01.50)
     if (counter == 4):
 #        if (command4Sent == 0):
 #            command4Sent == 1
         counter = 0
+        beta = 0
         sent = 0
         command2Sent = 0
         command3Send = 0
@@ -405,21 +407,20 @@ def Patience(RFsignal):
     if 0:                       #Change to '0' to stop  showing the angles from the Kalman filter
         outputString +="\t# kalmanX %5.2f   kalmanY %5.2f #" % (kalmanX,kalmanY)
     if 1:
-        outputString +="\t# Pitch %5.2f Roll %5.2f beta %5.2f counter %5.2f #" % (pitch, roll, counter, beta)
+        outputString +="\t# Pitch %5.2f Roll %5.2f counter %5.2f beta %5.2f #" % (pitch, roll, counter, beta)
     if (abs(pitch)>=1.3 or abs(roll)>=1.3) and beta == 0:
         outputString +="\n Ignition"
-        #counter = 3
-        #command3Send = 0
-        GPIO.output(26, 1)
-        strPitch=str(pitch)
-        GPIO.output(26, 1)
-        data = bytearray('Deployed \r\n', 'utf-8')
-        rfm9x.send(data)
+        counter = 3
+        command3Send = 0
+        #GPIO.output(26, 1)
+        #strPitch=str(pitch)
+        #GPIO.output(26, 1)
+#        data = bytearray('Deployed ', 'utf-8')
+#        rfm9x.send(data)
         beta = 1
-        time.sleep(2)
-    else:
-        GPIO.output(26,0)
- 
+#        time.sleep(2)
+    elif (abs(pitch) >= 1.3 or abs(roll)>=1.3) and beta >= 5:
+        GPIO.output(26, 0)
     print(outputString)
     #slow program down a bit, makes the output more readable
 #    time.sleep(0.03)
@@ -427,19 +428,12 @@ def Patience(RFsignal):
     i2c = busio.I2C(board.SCL, board.SDA)
 init = 0
 while True:
-    Initialize = rfm9x.receive()
-    if Initialize is not None:
-        packet_text = str(Initialize, "utf-8")
-        print("Received (utf-8): {0}".format(packet_text))
-        Patience(Initialize)
+    Comm = rfm9x.receive()
+    if Comm is not None:
+        Patience(Comm)
         init = 1
-       # rfm9x.send(rply)
-    elif ((Initialize is None) and (init != 1)):
+    elif ((Comm is None) and (init != 1)):
         init = 0 
     else:
         Patience(None)
- #       rfm9x.send(rply)
-#         if (packet_text is not None):
-#             counter += 1
-#             packet_text = None
             
