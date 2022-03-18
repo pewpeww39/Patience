@@ -52,7 +52,7 @@ if(IMU.BerryIMUversion == 99):
     print(" No BerryIMU found... exiting ")
     sys.exit()
 IMU.initIMU()       #Initialise the accelerometer, gyroscope and compass
-rfm9x.send(bytes('Communications online \r\n','utf-8'))
+rfm9x.send(bytes('Communications online ','utf-8'))
 
 gyroXangle = 0.0
 gyroYangle = 0.0
@@ -413,7 +413,7 @@ def Patience(RFsignal):
         GPIO.output(26, 1)
         strPitch=str(pitch)
         GPIO.output(26, 1)
-        data = bytearray('Deployed \r\n', 'utf-8')
+        data = bytearray('Deployed ', 'utf-8')
         rfm9x.send(data)
         beta = 1
         time.sleep(2)
