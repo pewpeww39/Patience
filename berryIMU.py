@@ -407,7 +407,7 @@ def Patience(RFsignal):
     if 0:                       #Change to '0' to stop  showing the angles from the Kalman filter
         outputString +="\t# kalmanX %5.2f   kalmanY %5.2f #" % (kalmanX,kalmanY)
     if 1:
-        outputString +="\t# Pitch %5.2f Roll %5.2f beta %5.2f counter %5.2f #" % (pitch, roll, counter, beta)
+        outputString +="\t# Pitch %5.2f Roll %5.2f counter %5.2f beta %5.2f #" % (pitch, roll, counter, beta)
     if (abs(pitch)>=1.3 or abs(roll)>=1.3) and beta == 0:
         outputString +="\n Ignition"
         counter = 3
