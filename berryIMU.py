@@ -53,7 +53,7 @@ if(IMU.BerryIMUversion == 99):
     print(" No BerryIMU found... exiting ")
     sys.exit()
 IMU.initIMU()       #Initialise the accelerometer, gyroscope and compass
-rfm9x.send(bytes('Communications online ','utf-8'))
+rfm9x.send(bytes('Communications online                 \r','utf-8'))
 
 gyroXangle = 0.0
 gyroYangle = 0.0
