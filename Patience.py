@@ -170,21 +170,6 @@ def kalmanFilterY ( accAngle, gyroRate, DT):
 
 
 def Patience(RFsignal):
-#    from picamera import PiCamera
-#    import time
-#    import math
-#    import board
-#    import IMU
-#    import datetime
-#    import os
-#    import sys
-#    import RPi.GPIO as GPIO
-#    import busio
-#    from digitalio import DigitalInOut, Direction, Pull
-#    import adafruit_ssd1306
-#    import adafruit_rfm9x
-
-    # Create the I2C interface.
 
     ################# Compass Calibration values ############
     # Use calibrateBerryIMU.py to get calibration values
@@ -267,13 +252,13 @@ def Patience(RFsignal):
         counter = 0
         beta = 0
         sent = 0
+        init = 0
         command2Sent = 0
         command3Send = 0
         command4Sent = 0 
         rfm9x.send(bytes('Reset                        ', 'utf-8'))
     packet_text = None
     blastoff = None
-#            command3Sent = 1 #make elseif so that primary deploy calls this case
 #Read the accelerometer,gyroscope and magnetometer values
     ACCx = IMU.readACCz()
     ACCy = IMU.readACCx()
@@ -323,10 +308,6 @@ def Patience(RFsignal):
     if AccYangle > 180 or AccYangle < 0:
         AccYangle -= 360
         
-    #else:
-        #AccYangle += 90.0
-
-
     #Complementary filter used to combine the accelerometer and gyro values.
     CFangleX=AA*(CFangleX+rate_gyr_x*LP) +(1 - AA) * AccXangle
     CFangleY=AA*(CFangleY+rate_gyr_y*LP) +(1 - AA) * AccYangle
@@ -343,10 +324,6 @@ def Patience(RFsignal):
     if heading < 0:
         heading += 360
 
-
-
-
-
     ####################################################################
     ###################Tilt compensated heading#########################
     ####################################################################
@@ -354,14 +331,12 @@ def Patience(RFsignal):
     accXnorm = ACCx/math.sqrt(ACCx * ACCx + ACCy * ACCy + ACCz * ACCz)
     accYnorm = ACCy/math.sqrt(ACCx * ACCx + ACCy * ACCy + ACCz * ACCz)
 
-
     #Calculate pitch and roll
     pitch = math.asin(accXnorm)
     try:
         roll = -math.asin(accYnorm/math.cos(pitch))
     except Exception:
         roll = 1
-
 
     #Calculate the new tilt compensated values
     #The compass and accelerometer are orientated differently on the the BerryIMUv1, v2 and v3.
@@ -378,9 +353,6 @@ def Patience(RFsignal):
         magYcomp = MAGx*math.sin(roll)*math.sin(pitch)+MAGy*math.cos(roll)-MAGz*math.sin(roll)*math.cos(pitch)
     else:                                                                #LSM9DS1
         magYcomp = MAGx*math.sin(roll)*math.sin(pitch)+MAGy*math.cos(roll)+MAGz*math.sin(roll)*math.cos(pitch)
-
-
-
 
     #Calculate tilt compensated heading
     tiltCompensatedHeading = 180 * math.atan2(magYcomp,magXcomp)/M_PI
@@ -412,18 +384,11 @@ def Patience(RFsignal):
         outputString +="\n Ignition"
         counter = 3
         command3Send = 0
-        #GPIO.output(26, 1)
-        #strPitch=str(pitch)
-        #GPIO.output(26, 1)
-#        data = bytearray('Deployed ', 'utf-8')
-#        rfm9x.send(data)
         beta = 1
 #        time.sleep(2)
     elif (abs(pitch) >= 1.3 or abs(roll)>=1.3) and beta >= 5:
         GPIO.output(26, 0)
     print(outputString)
-    #slow program down a bit, makes the output more readable
-#    time.sleep(0.03)
     #camera.stop_recording()
     i2c = busio.I2C(board.SCL, board.SDA)
 init = 0
