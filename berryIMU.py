@@ -44,11 +44,8 @@ beta = 0
 CS = DigitalInOut(board.CE1)
 RESET = DigitalInOut(board.D25)
 spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
-<<<<<<< HEAD
 rfm9x = adafruit_rfm9x.RFM9x(spi, CS, RESET, 915.0, baudrate=115200)
-=======
 rfm9x = adafruit_rfm9x.RFM9x(spi, CS, RESET, 915.0, baudrate=9600)
->>>>>>> 83178d8797a9245b6ace2a6c14438679b977d6eb
 rfm9x.tx_power = 23
 prev_packet = None
 IMU.detectIMU()     #Detect if BerryIMU is connected.
