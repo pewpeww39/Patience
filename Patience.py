@@ -26,7 +26,7 @@ import sys
 import RPi.GPIO as GPIO
 import busio
 from digitalio import DigitalInOut, Direction, Pull
-import adafruit_ssd1306
+#import adafruit_ssd1306
 import adafruit_rfm9x
 global beta
 global counter 
@@ -53,7 +53,7 @@ if(IMU.BerryIMUversion == 99):
     print(" No BerryIMU found... exiting ")
     sys.exit()
 IMU.initIMU()       #Initialise the accelerometer, gyroscope and compass
-rfm9x.send(bytes('Communications online                 \r','utf-8'))
+rfm9x.send(bytes('Communications online       \r\n','utf-8'))
 
 gyroXangle = 0.0
 gyroYangle = 0.0
@@ -227,12 +227,12 @@ def Patience(RFsignal):
     if ((counter == 1) and blastoff is not None):
         if (sent == 0):
             sent = 1
-            rfm9x.send(bytes('Ready for takeoff.      ', 'utf-8'))
+            rfm9x.send(bytes('Ready for takeoff.   \n', 'utf-8'))
             
     if (counter == 2):
         if (command2Sent == 0):
             command2Sent = 1
-            rfm9x.send(bytes('TAKEOFF!                ', 'utf-8'))
+            rfm9x.send(bytes('TAKEOFF!             \n', 'utf-8'))
             GPIO.output(24,1)
             time.sleep(01.50)
         else:
@@ -240,7 +240,7 @@ def Patience(RFsignal):
     if (counter == 3):
         if (command3Send == 0):
             command3Send = 1
-            rfm9x.send(bytes('Deployment!              ', 'utf-8'))
+            rfm9x.send(bytes('Deployment!          \n', 'utf-8'))
         if ((command3Send <= 5) and (beta <= 5)):
             GPIO.output(26,1)
             command3Send += 1
@@ -256,7 +256,7 @@ def Patience(RFsignal):
         command2Sent = 0
         command3Send = 0
         command4Sent = 0 
-        rfm9x.send(bytes('Reset                        ', 'utf-8'))
+        rfm9x.send(bytes('Reset                    \n ', 'utf-8'))
     packet_text = None
     blastoff = None
 #Read the accelerometer,gyroscope and magnetometer values
@@ -363,6 +363,8 @@ def Patience(RFsignal):
 
     ##################### END Tilt Compensation ########################
 
+    pitchMsg = "Pitch: %5.2f     Roll: %5.2f      " %(pitch, roll)
+    rfm9x.send(bytes(pitchMsg, 'utf-8'))
 
     if 1:                       #Change to '0' to stop showing the angles from the accelerometer
         outputString += "#  ACCX Angle %5.2f ACCY Angle %5.2f ACCZ Angle %5.2f #  " % (AccXangle, AccYangle, AccZangle)
