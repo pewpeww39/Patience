@@ -31,6 +31,12 @@ void setup()
 
   while (!Serial);
   Serial.begin(115200);
+  Serial1.begin(115200);
+  //  Serial2.begin(115200);
+  //  Serial3.begin(115200);
+
+
+
   delay(100);
 
   Serial.println("Arduino LoRa RX Test!");
@@ -61,7 +67,7 @@ void setup()
   // you can set transmitter powers from 5 to 23 dBm:
   rf95.setTxPower(23, false);
 }
-
+int Cycle = 0;
 void loop()
 {
   if (rf95.available())
@@ -69,61 +75,82 @@ void loop()
     // Should be a message for us now
     uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
     uint8_t len = sizeof(buf);
-
-    if (rf95.recv(buf, &len))
-    {
-      digitalWrite(LED, HIGH);
-      //      RH_RF95::printBuffer("Received: ", buf, len);
-      Serial.print("Got: ");
-      Serial.println((char*) buf);
-      //      if ( strstr((char*)buf, "Communications online"))
-      //
-      //
-      //                  //      Serial.print("RSSI: ");
-      //                  //      Serial.println(rf95.lastRssi(), DEC);
-      //
-      //                  // Send a reply
-      //                  uint8_t data[] = "And hello back to you";
-      //                  rf95.send(data, sizeof(data));
-      //                  rf95.waitPacketSent();
-      //                  //      Serial.println("Sent a reply");
-      //                  digitalWrite(LED, LOW);
-      //                }
-      //                  else
-      //                  {
-      //                  Serial.println("Receive failed");
-      //                }
+    int MsgCycle = Cycle % 2;
+    Cycle += 1;
+    switch (MsgCycle) {
+      case 0: {
+          if (rf95.recv(buf, &len))
+          {
+            digitalWrite(LED, HIGH);
+            //RH_RF95::printBuffer("Received: ", buf, len);
+            Serial.print("Got: ");
+            Serial.println((char*) buf);
+            Serial1.println((char*) buf);
+            //      if ( strstr((char*)buf, "Communications online"))
+            //
+            //
+            //                  //      Serial.print("RSSI: ");
+            //                  //      Serial.println(rf95.lastRssi(), DEC);
+            //
+            //                  // Send a reply
+            //                  uint8_t data[] = "And hello back to you";
+            //                  rf95.send(data, sizeof(data));
+            //                  rf95.waitPacketSent();
+            //                  //      Serial.println("Sent a reply");
+            //                  digitalWrite(LED, LOW);
+            //                }
+            //                  else
+            //                  {
+            //                  Serial.println("Receive failed");
+            //                }
+          }
+          break;
+        }
+      case 1:
+        if (rf95.recv(buf, &len))
+        {
+          digitalWrite(LED, HIGH);
+          //RH_RF95::printBuffer("Received: ", buf, len);
+          Serial.print("Got1: ");
+          Serial.println((char*) buf);
+          Serial1.println((char*) buf);
+        }
+        break;
     }
   }
+
   if (Serial.available() > 0) {
     int command = Serial.read() - '0';
-
+    //coder = ";
+    //uint8_t coderlen = sizeof(coder);
+    //Serial1.write(coder); //, &coderlen);
+    //    Serial1.println((char*) buf);
     switch (command)
     {
       case 1: {
-         // Serial.print("Ready for launch.");
-          uint8_t mesg[] = "Confirm Signal \r\n";
+          // Serial.print("Ready for launch.");
+          uint8_t mesg[] = "1";
           rf95.send(mesg, sizeof(mesg));
           break;
         }
       case 2:
         {
-         // Serial.print("Blast off!");
+          // Serial.print("Blast off!");
           uint8_t mesg[] = "Blast Off!";
           rf95.send(mesg, sizeof(mesg));
           break;
         }
       case 3:
         {
-         // Serial.print("Emergency Deployment!");
+          // Serial.print("Emergency Deployment!");
           uint8_t mesg[] = "Deployment";
           rf95.send(mesg, sizeof(mesg));
           break;
         }
       case 4:
-      {
-        uint8_t mesg[] = "Reset";
-        rf95.send(mesg, sizeof(mesg));
+        {
+          uint8_t mesg[] = "Reset";
+          rf95.send(mesg, sizeof(mesg));
         }
       default:
         break;
