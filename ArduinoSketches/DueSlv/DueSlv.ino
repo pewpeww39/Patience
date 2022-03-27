@@ -68,6 +68,7 @@ void setup()
   rf95.setTxPower(23, false);
 }
 int Cycle = 0;
+uint8_t mesg[] = "                       ";
 void loop()
 {
   if (rf95.available())
@@ -76,7 +77,11 @@ void loop()
     uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
     uint8_t len = sizeof(buf);
     int MsgCycle = Cycle % 2;
-    Cycle += 1;
+    if (strcmp((char*)buf, "Reset") == 0)
+    {
+      Cycle += 1;
+    }
+//    Cycle += 1;
     switch (MsgCycle) {
       case 0: {
           if (rf95.recv(buf, &len))
