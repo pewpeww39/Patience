@@ -40,7 +40,7 @@ command2Sent = 0
 command3Send = 0
 command4Sent = 0
 beta = 0
-
+gamma = 0
 CS = DigitalInOut(board.CE1)
 RESET = DigitalInOut(board.D25)
 spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
@@ -53,7 +53,7 @@ if(IMU.BerryIMUversion == 99):
     print(" No BerryIMU found... exiting ")
     sys.exit()
 IMU.initIMU()       #Initialise the accelerometer, gyroscope and compass
-rfm9x.send(bytes('Communications online       \r\n','utf-8'))
+rfm9x.send(bytes('Communications online              \r\n','utf-8'))
 
 gyroXangle = 0.0
 gyroYangle = 0.0
@@ -216,31 +216,38 @@ def Patience(RFsignal):
     #camera.wait_recording(5)
     #camera.stop_recording()
     global beta 
-
+    global gamma
 #    while True:
     blastoff = RFsignal
     if blastoff is not None:
         packet_text = str(blastoff, "utf-8")
         print("Received (utf-8): {0}".format(packet_text))
         counter = counter + 1
-
+    if (counter == 0):
+        outputstring = 0
+    else:
+        outputstring = 1
     if ((counter == 1) and blastoff is not None):
         if (sent == 0):
             sent = 1
-            rfm9x.send(bytes('Ready for takeoff.   \n', 'utf-8'))
+            rfm9x.send(bytes('Ready for takeoff.       \r\n', 'utf-8'))
             
     if (counter == 2):
         if (command2Sent == 0):
             command2Sent = 1
-            rfm9x.send(bytes('TAKEOFF!             \n', 'utf-8'))
+            rfm9x.send(bytes('TAKEOFF!                 \r\n', 'utf-8'))
+            #GPIO.output(24,1)
+            #time.sleep(01.50)
+        if ((command2Sent <= 5) and (gamma <= 5)):
             GPIO.output(24,1)
-            time.sleep(01.50)
+            command2Sent += 1
+            gamma += 1
         else:
             GPIO.output(24,0)
     if (counter == 3):
         if (command3Send == 0):
             command3Send = 1
-            rfm9x.send(bytes('Deployment!          \n', 'utf-8'))
+            rfm9x.send(bytes('Deployment!              \r\n', 'utf-8'))
         if ((command3Send <= 5) and (beta <= 5)):
             GPIO.output(26,1)
             command3Send += 1
@@ -255,8 +262,11 @@ def Patience(RFsignal):
         init = 0
         command2Sent = 0
         command3Send = 0
+        outputstring = 0
+#        Comm is None
         command4Sent = 0 
-        rfm9x.send(bytes('Reset                    \n ', 'utf-8'))
+        rfm9x.send(bytes('Reset                \r \n ', 'utf-8'))
+#        return()
     packet_text = None
     blastoff = None
 #Read the accelerometer,gyroscope and magnetometer values
@@ -362,9 +372,9 @@ def Patience(RFsignal):
 
 
     ##################### END Tilt Compensation ########################
-
-    pitchMsg = "Pitch: %5.2f     Roll: %5.2f      " %(pitch, roll)
-    rfm9x.send(bytes(pitchMsg, 'utf-8'))
+    if outputstring == 1:
+        pitchMsg = "Pitch: %5.2f     Roll: %5.2f      " %(pitch, roll)
+        rfm9x.send(bytes(pitchMsg, 'utf-8'))
 
     if 1:                       #Change to '0' to stop showing the angles from the accelerometer
         outputString += "#  ACCX Angle %5.2f ACCY Angle %5.2f ACCZ Angle %5.2f #  " % (AccXangle, AccYangle, AccZangle)
@@ -380,8 +390,9 @@ def Patience(RFsignal):
 
     if 0:                       #Change to '0' to stop  showing the angles from the Kalman filter
         outputString +="\t# kalmanX %5.2f   kalmanY %5.2f #" % (kalmanX,kalmanY)
-    if 1:
+    if outputstring ==  1:
         outputString +="\t# Pitch %5.2f Roll %5.2f counter %5.2f beta %5.2f #" % (pitch, roll, counter, beta)
+        print(outputString)
     if (abs(pitch)>=1.3 or abs(roll)>=1.3) and beta == 0:
         outputString +="\n Ignition"
         counter = 3
@@ -390,7 +401,7 @@ def Patience(RFsignal):
 #        time.sleep(2)
     elif (abs(pitch) >= 1.3 or abs(roll)>=1.3) and beta >= 5:
         GPIO.output(26, 0)
-    print(outputString)
+    #print(outputString)
     #camera.stop_recording()
     i2c = busio.I2C(board.SCL, board.SDA)
 init = 0
