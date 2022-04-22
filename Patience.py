@@ -1,3 +1,4 @@
+
     #!/usr/bin/python
     #
     #       This program includes a number of calculations to improve the
@@ -60,9 +61,10 @@ gyroYangle = 0.0
 gyroZangle = 0.0
 CFangleX = 0.0
 CFangleY = 0.0
+cFangleZ = 0.0
 kalmanX = 0.0
 kalmanY = 0.0
-
+kalmanZ = 0.0
 #camera=PiCamera ()
 #time.sleep (2)
 #camera.resolution = (1280, 720)
@@ -96,7 +98,7 @@ YP_10 = 0.0
 YP_11 = 0.0
 KFangleX = 0.0
 KFangleY = 0.0
-
+KFangleZ = 0.0
 def kalmanFilterX ( accAngle, gyroRate, DT):
     x=0.0
     S=0.0
@@ -215,7 +217,7 @@ def Patience(RFsignal):
     #camera.start_recording(file_name)
     #camera.wait_recording(5)
     #camera.stop_recording()
-    global beta 
+    global beta
     global gamma
 #    while True:
     blastoff = RFsignal
@@ -321,11 +323,11 @@ def Patience(RFsignal):
     #Complementary filter used to combine the accelerometer and gyro values.
     CFangleX=AA*(CFangleX+rate_gyr_x*LP) +(1 - AA) * AccXangle
     CFangleY=AA*(CFangleY+rate_gyr_y*LP) +(1 - AA) * AccYangle
-
+#    cFangleZ=AA*(cFangleZ+rate_gyr_z*LP) +(1 - AA) * AccZangle
     #Kalman filter used to combine the accelerometer and gyro values.
     kalmanY = kalmanFilterY(AccYangle, rate_gyr_y,LP)
     kalmanX = kalmanFilterX(AccXangle, rate_gyr_x,LP)
-
+#    kalmanZ = kalmanFilterZ(AccZangle, rate_gyr_x,LP)
 
     #Calculate heading
     heading = 180 * math.atan2(MAGy,MAGx)/M_PI
@@ -340,13 +342,15 @@ def Patience(RFsignal):
     #Normalize accelerometer raw values.
     accXnorm = ACCx/math.sqrt(ACCx * ACCx + ACCy * ACCy + ACCz * ACCz)
     accYnorm = ACCy/math.sqrt(ACCx * ACCx + ACCy * ACCy + ACCz * ACCz)
-
+#    accZnorm = ACCz/math.sqrt(ACCx * ACCx + ACCy * ACCy + ACCz * ACCz)
     #Calculate pitch and roll
     pitch = math.asin(accXnorm)
-    try:
-        roll = -math.asin(accYnorm/math.cos(pitch))
-    except Exception:
-        roll = 1
+    yaw = math.asin(accYnorm)
+#    roll = math.asin(accZnorm)
+#    try:
+#        roll = -math.asin(accYnorm/math.cos(pitch))
+#    except Exception:
+#        roll = 1
 
     #Calculate the new tilt compensated values
     #The compass and accelerometer are orientated differently on the the BerryIMUv1, v2 and v3.
@@ -360,9 +364,9 @@ def Patience(RFsignal):
 
     #Y compensation
     if(IMU.BerryIMUversion == 1 or IMU.BerryIMUversion == 3):            #LSM9DS0 and (LSM6DSL & LIS2MDL)
-        magYcomp = MAGx*math.sin(roll)*math.sin(pitch)+MAGy*math.cos(roll)-MAGz*math.sin(roll)*math.cos(pitch)
+        magYcomp = MAGx*math.sin(yaw)*math.sin(pitch)+MAGy*math.cos(yaw)-MAGz*math.sin(yaw)*math.cos(pitch)
     else:                                                                #LSM9DS1
-        magYcomp = MAGx*math.sin(roll)*math.sin(pitch)+MAGy*math.cos(roll)+MAGz*math.sin(roll)*math.cos(pitch)
+        magYcomp = MAGx*math.sin(yaw)*math.sin(pitch)+MAGy*math.cos(yaw)+MAGz*math.sin(yaw)*math.cos(pitch)
 
     #Calculate tilt compensated heading
     tiltCompensatedHeading = 180 * math.atan2(magYcomp,magXcomp)/M_PI
@@ -373,9 +377,10 @@ def Patience(RFsignal):
 
     ##################### END Tilt Compensation ########################
     if outputstring == 1:
-        pitchMsg = "Pitch: %5.2f     Roll: %5.2f      " %(pitch, roll)
+        pitchMsg = "Pitch: %5.2f   Yaw: %5.2f \r\n " %(pitch, yaw)
+#        yawMsg = "Yaw: %5.2f    \r\n" %(yaw)
         rfm9x.send(bytes(pitchMsg, 'utf-8'))
-
+#        rfm9x.send(bytes(yawMsg, 'utf-8'))
     if 1:                       #Change to '0' to stop showing the angles from the accelerometer
         outputString += "#  ACCX Angle %5.2f ACCY Angle %5.2f ACCZ Angle %5.2f #  " % (AccXangle, AccYangle, AccZangle)
 
@@ -391,15 +396,15 @@ def Patience(RFsignal):
     if 0:                       #Change to '0' to stop  showing the angles from the Kalman filter
         outputString +="\t# kalmanX %5.2f   kalmanY %5.2f #" % (kalmanX,kalmanY)
     if outputstring ==  1:
-        outputString +="\t# Pitch %5.2f Roll %5.2f counter %5.2f beta %5.2f #" % (pitch, roll, counter, beta)
+        outputString +="\t# Pitch %5.2f Yaw %5.2f counter %5.2f beta %5.2f #" % (pitch, yaw, counter, beta)
         print(outputString)
-    if (abs(pitch)>=1.3 or abs(roll)>=1.3) and beta == 0:
+    if (abs(pitch)>=1.3 or abs(yaw)>=1.3) and beta == 0:
         outputString +="\n Ignition"
         counter = 3
         command3Send = 0
         beta = 1
 #        time.sleep(2)
-    elif (abs(pitch) >= 1.3 or abs(roll)>=1.3) and beta >= 5:
+    elif (abs(pitch) >= 1.3 or abs(yaw)>=1.3) and beta >= 5:
         GPIO.output(26, 0)
     #print(outputString)
     #camera.stop_recording()
