@@ -1,0 +1,3 @@
+[submodule "BerruIMU"]
+	path = BerruIMU
+	url = https://github.com/pewpeww39/RadioHead.git
