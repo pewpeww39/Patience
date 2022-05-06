@@ -79,7 +79,7 @@ AA =  0.40      # Complementary filter constant
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(26, GPIO.OUT, initial=0)
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(24, GPIO.OUT, initial = 0)
+GPIO.setup(6, GPIO.OUT, initial = 0)
 
 print("Waiting to connect...")
 #Kalman filter variables
@@ -201,6 +201,7 @@ def Patience(RFsignal):
     global sent
     global command2Sent
     global command3Send
+    global ignitionCounter
     gyroXangle = 0.0
     gyroYangle = 0.0
     gyroZangle = 0.0
@@ -237,15 +238,15 @@ def Patience(RFsignal):
     if (counter == 2):
         if (command2Sent == 0):
             command2Sent = 1
+        #   ignitionCommand += 1
             rfm9x.send(bytes('TAKEOFF!                 \r\n', 'utf-8'))
-            #GPIO.output(24,1)
             #time.sleep(01.50)
         if ((command2Sent <= 5) and (gamma <= 5)):
-            GPIO.output(24,1)
-            command2Sent += 1
+            GPIO.output(6,1)
+            command2Sent = 1
             gamma += 1
         else:
-            GPIO.output(24,0)
+            GPIO.output(6,0)
     if (counter == 3):
         if (command3Send == 0):
             command3Send = 1
@@ -255,6 +256,8 @@ def Patience(RFsignal):
             command3Send += 1
             beta += 1
            # time.sleep(01.50)
+        else:
+            GPIO.output(26, 0)
     if (counter == 4):
 #        if (command4Sent == 0):
 #            command4Sent == 1
@@ -399,7 +402,7 @@ def Patience(RFsignal):
         outputString +="\t# Pitch %5.2f Yaw %5.2f counter %5.2f beta %5.2f #" % (pitch, yaw, counter, beta)
         print(outputString)
     if (abs(pitch)>=1.3 or abs(yaw)>=1.3) and beta == 0:
-        outputString +="\n Ignition"
+        outputString +="\n Deployment"
         counter = 3
         command3Send = 0
         beta = 1
