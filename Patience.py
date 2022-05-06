@@ -263,6 +263,7 @@ def Patience(RFsignal):
 #            command4Sent == 1
         counter = 0
         beta = 0
+        gamma = 0
         sent = 0
         init = 0
         command2Sent = 0
