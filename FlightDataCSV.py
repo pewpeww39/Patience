@@ -5,7 +5,7 @@ import pandas as pd
 port = serial.Serial("/dev/ttyS0", baudrate=115200)
 count = 0
 row = 0
-gpsd = pd.DataFrame(data=[],index=[], columns=['Latitude','Lat','Longitude','Lon','Altitude','CommandTX'])
+gpsd = pd.DataFrame(data=[],index=[], columns=['Latitude','Lat','Longitude','Lon','Altitude','CommandTX','Pitch','Roll','Yaw'])
 while True:
         if count == 0:
             RFID = port.read(11)
@@ -37,6 +37,10 @@ while True:
             RFID = port.read(1)
             cmdTX = RFID.decode()
             gpsd.at[row, 'CommandTX'] = cmdTX
+            if cmdTX == 1:
+                print('Check Completed')
+            elif cmdTX == 2:
+                print('Ignition')
 
             count = 0
             row =row + 1  # print (longGPS)
