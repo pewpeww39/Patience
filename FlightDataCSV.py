@@ -40,6 +40,6 @@ while True:
 
             count = 0
             row =row + 1  # print (longGPS)
-            gpsd.to_csv('/home/pi/Patience2/Flightdata.csv')
+            gpsd.to_csv('/home/pi/Patience/FlightData/Flightdata.csv')
             print(gpsd)
         time.sleep (0.1)
