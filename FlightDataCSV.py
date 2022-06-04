@@ -37,10 +37,10 @@ while True:
             RFID = port.read(1)
             cmdTX = RFID.decode()
             gpsd.at[row, 'CommandTX'] = cmdTX
-            if cmdTX == 1:
-                print('Check Completed')
-            elif cmdTX == 2:
-                print('Ignition')
+#        if gpsd.at[row, 'CommandTX']== 1:
+#            print('Check Completed')
+#        elif gpsd.at[row, 'CommandTX'] == 2:
+#            print('Ignition')
 
             count = 0
             row =row + 1  # print (longGPS)

@@ -10,15 +10,17 @@
 
 #include <SPI.h>
 #include <RH_RF95.h>
+#include <RHReliableDatagram.h>
 
 //#include <ICSP.h>
 #define RFM95_CS 12
 #define RFM95_RST 13
 #define RFM95_INT 11
-
+#define CLIENT_ADDRESS 1
+#define SERVER_ADDRESS 2
 // Singleton instance of the radio driver
 RH_RF95 rf95(RFM95_CS, RFM95_INT);
-
+RHReliableDatagram manager(rf95, SERVER_ADDRESS);
 // Blinky on receipt
 //#define LED 13
 struct dataStruct {
@@ -49,7 +51,8 @@ void setup()
   if (!rf95.init())
     Serial.println("init failed");
   // Defaults after init are 434.0MHz, 13dBm, Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on
-
+  if (!manager.init())
+    Serial.println("init failed");
   // The default transmitter power is 13dBm, using PA_BOOST.
   // If you are using RFM95/96/97/98 modules which uses the PA_BOOST transmitter pin, then
   // you can set transmitter powers from 5 to 23 dBm:
@@ -65,10 +68,10 @@ void setup()
 
 //float altitudeLast;
 int Cycle = 0;
-const int BUFFER_SIZE = 1;
-char buf[BUFFER_SIZE];
+//const int BUFFER_SIZE = 1;
+//char buf[BUFFER_SIZE];
 //int command = {1};
-
+uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
 void loop()
 {
 
@@ -81,9 +84,12 @@ void loop()
   //Serial.println(MsgCycle);
   //switch (MsgCycle) {
   //case 0: {
-  if (rf95.available())
+  if (manager.available())
+    //if (rf95.available())
   {
-    if (rf95.recv(buf, &len))
+    uint8_t from;
+    if (manager.recvfromAck(buf, &len, &from))
+      //if (rf95.recv(buf, &len))
     {
       //  digitalWrite(LED, HIGH);
       //      RH_RF95::printBuffer("request: ", buf, len);
@@ -100,11 +106,11 @@ void loop()
       Serial1.print(gpsData.commandTX, DEC);
       //      rf95.send((uint8_t*)&gpsData, size3of(gpsData));
       //      rf95.waitPacketSent();
+      // Send a reply back to the originator client
+      if (!manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), from))
+        Serial.println("sendtoWait failed");
     }
-    else
-    {
-      Serial.println("recv failed");
-    }
+
   }
 
   if (Serial.available() > 0) {
@@ -112,32 +118,58 @@ void loop()
     //Serial.print(command);
     switch (command) {
       case 1: {
-          //Serial.println(command);
-          Cycle = 1;
-          gpsData.commandTX = Cycle; //int(Serial.read() /10);
+          //Serial.println(command);//int(Serial.read() /10);
           //Serial.println(gpsData.commandTX);
-          rf95.send((uint8_t*)&gpsData, sizeof(gpsData));
-          rf95.waitPacketSent();
+          Cycle = 1;
+          gpsData.commandTX = Cycle;
+          if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), CLIENT_ADDRESS)) {
+            uint8_t len = sizeof(buf);
+            uint8_t from;
+            delay(10);
+            if (manager.recvfromAckTimeout(buf, &len, 2000, &from)) {
+              //rf95.waitPacketSent();
+              Serial.println("Communications Check Complete.");
+            }
+          }
+          //rf95.send((uint8_t*)&gpsData, sizeof(gpsData));
+          //rf95.waitPacketSent();
           break;
         }
       case 2: {
           Cycle = 2;
           gpsData.commandTX = Cycle; //int(Serial.read() /10);
-          //Serial.println(gpsData.commandTX);
-          rf95.send((uint8_t*)&gpsData, sizeof(gpsData));
-          rf95.waitPacketSent();
+          if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), CLIENT_ADDRESS)) {
+            uint8_t len = sizeof(buf);
+            uint8_t from;
+            delay(10);
+            if (manager.recvfromAckTimeout(buf, &len, 2000, &from)) {
+              //rf95.waitPacketSent();
+              Serial.println("Ignition.");
+            }
+          }//Serial.println(gpsData.commandTX);
+          //rf95.send((uint8_t*)&gpsData, sizeof(gpsData));
+          //rf95.waitPacketSent();
           break;
         }
-        case 3: {
+      case 3: {
           Cycle = 3;
           gpsData.commandTX = Cycle; //int(Serial.read() /10);
+          if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), CLIENT_ADDRESS)) {
+            uint8_t len = sizeof(buf);
+            uint8_t from;
+            delay(10);
+            if (manager.recvfromAckTimeout(buf, &len, 2000, &from)) {
+              //rf95.waitPacketSent();
+              Serial.println("Deployment.");
+            }
+          }
           //Serial.println(gpsData.commandTX);
-          rf95.send((uint8_t*)&gpsData, sizeof(gpsData));
-          rf95.waitPacketSent();
+          //rf95.send((uint8_t*)&gpsData, sizeof(gpsData));
+          //rf95.waitPacketSent();
           break;
         }
       default: {
-          Cycle = 0;
+          //Cycle = 0;
           //gpsData.commandTX = Cycle;
           //rf95.send((uint8_t*)&gpsData, sizeof(gpsData));
           //rf95.waitPacketSent();
