@@ -4,6 +4,7 @@ import struct
 import pandas as pd
 port = serial.Serial("/dev/ttyS0", baudrate=115200)
 count = 0
+prevrow = 0
 row = 0
 gpsd = pd.DataFrame(data=[],index=[], columns=['Latitude','Lat','Longitude','Lon','Altitude','CommandTX','Pitch','Roll','Yaw'])
 while True:
@@ -41,9 +42,13 @@ while True:
 #            print('Check Completed')
 #        elif gpsd.at[row, 'CommandTX'] == 2:
 #            print('Ignition')
-
+            prevrow = row
             count = 0
             row =row + 1  # print (longGPS)
             gpsd.to_csv('/home/pi/Patience/FlightData/Flightdata.csv')
             print(gpsd)
+        if gpsd.at[prevrow, 'CommandTX'] == '1':
+            print("Chcek Completed")
+       # else:
+
         time.sleep (0.1)
