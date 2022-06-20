@@ -16,6 +16,7 @@
 #define RFM95_CS 12
 #define RFM95_RST 13
 #define RFM95_INT 11
+#define RF95_FREQ 915.0
 #define CLIENT_ADDRESS 1
 #define SERVER_ADDRESS 2
 // Singleton instance of the radio driver
@@ -30,6 +31,9 @@ struct dataStruct {
   char lonGPS;
   float altitudeGPS;
   int commandTX = 9;
+  float ROLL;
+  float PITCH;
+  float YAW;
 } gpsData;
 
 void setup()
@@ -48,226 +52,94 @@ void setup()
   delay(100);
   digitalWrite(RFM95_RST, HIGH);
   delay(100);
-  if (!rf95.init())
+  if (!rf95.init()) {
     Serial.println("init failed");
+  }
   // Defaults after init are 434.0MHz, 13dBm, Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on
-  if (!manager.init())
+  if (!manager.init()) {
     Serial.println("init failed");
-  // The default transmitter power is 13dBm, using PA_BOOST.
-  // If you are using RFM95/96/97/98 modules which uses the PA_BOOST transmitter pin, then
+  }
+  Serial.println("\nReliable datagram init OK!");
+  //rf95.setFrequency(915.0);
+//  if (!rf95.setFrequency(RF95_FREQ)) {
+//    Serial.println("setFrequency failed");
+////    while (1);
+//  }
+//  Serial.print("Set Freq to: "); Serial.println(RF95_FREQ);
+
   // you can set transmitter powers from 5 to 23 dBm:
-  rf95.setTxPower(23, false);
-  // If you are using Modtronix inAir4 or inAir9,or any other module which uses the
-  // transmitter RFO pins and not the PA_BOOST pins
-  // then you can configure the power transmitter power for -1 to 14 dBm and with useRFO true.
-  // Failure to do that will result in extremely low transmit powers.
-  //  driver.setTxPower(14, true);
-  //Serial.println("Latitude, Longitude, Altitude");
+  rf95.setTxPower(20, false);
 }
 
-
-//float altitudeLast;
 int Cycle = 0;
-//const int BUFFER_SIZE = 1;
-//char buf[BUFFER_SIZE];
-//int command = {1};
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
 void loop()
-{
+{ 
+    uint8_t mesg[] = {};
+    uint8_t buf[RH_RF95_MAX_MESSAGE_LEN] = {};
+    uint8_t len = sizeof(buf);
+    if (manager.available()) {
+     // if (rf95.available()){
+      uint8_t from;
+      uint8_t len = sizeof(buf);
+      if (manager.recvfromAckTimeout(buf, &len, 2000, &from))
+      //  if (rf95.recv(buf, &len))
+      {
+        //  digitalWrite(LED, HIGH);
 
-  // Should be a message for us now
-  uint8_t buf[RH_RF95_MAX_MESSAGE_LEN] = {};
-  uint8_t mesg[] = {};
-  uint8_t len = sizeof(buf);
-  //int MsgCycle = 0; //Cycle % 2;
-  //Cycle = Cycle + 1;
-  //Serial.println(MsgCycle);
-  //switch (MsgCycle) {
-  //case 0: {
-  if (manager.available())
-    //if (rf95.available())
-  {
-    uint8_t from;
-    if (manager.recvfromAck(buf, &len, &from))
-      //if (rf95.recv(buf, &len))
-    {
-      //  digitalWrite(LED, HIGH);
-      //      RH_RF95::printBuffer("request: ", buf, len);
-      memcpy(&gpsData, buf, sizeof(gpsData));
-
-      delay(10);
-      //if (Serial.available())
-      //{
-      Serial1.print(gpsData.latitudeGPS, 6);
-      Serial1.print(gpsData.longitudeGPS, 6);
-      Serial1.print(gpsData.latGPS);
-      Serial1.print(gpsData.lonGPS);
-      Serial1.print(gpsData.altitudeGPS, 1);
-      Serial1.print(gpsData.commandTX, DEC);
-      //      rf95.send((uint8_t*)&gpsData, size3of(gpsData));
-      //      rf95.waitPacketSent();
-      // Send a reply back to the originator client
-      if (!manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), from))
-        Serial.println("sendtoWait failed");
+        Serial.print("...");
+        memcpy(&gpsData, buf, sizeof(gpsData));
+        delay(10);
+        Serial1.print(gpsData.latitudeGPS, 6); Serial1.print('\n');
+        Serial1.print(gpsData.longitudeGPS, 6); Serial1.print('\n');
+        Serial1.print(gpsData.latGPS); Serial1.print('\n');
+        Serial1.print(gpsData.lonGPS); Serial1.print('\n');
+        Serial1.print(gpsData.altitudeGPS, 1); Serial1.print('\n');
+        Serial1.print(gpsData.commandTX, DEC); Serial1.print('\n');
+        Serial1.print(gpsData.ROLL, 2); Serial1.print('\n');
+        Serial1.print(gpsData.PITCH, 2); Serial1.print('\n');
+        Serial1.print(gpsData.YAW, 2); Serial1.print('\n');
+//        if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), from)) {
+//          Serial.println("...");
+//        }
+      }
     }
+    if (Serial.available() > 0) {
+      int command = Serial.read() - '0'; //(BUFFER_SIZE);
+      //Serial.print(command);
+      switch (command) {
+        case 1: {
+            Cycle = 1;
+            gpsData.commandTX = command; //Cycle;
+            //Serial.println("W");
+            if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), CLIENT_ADDRESS)) {
+              
+                Serial.println("\nCommunications Check Complete.");
 
-  }
-
-  if (Serial.available() > 0) {
-    int command = Serial.read() - '0'; //(BUFFER_SIZE);
-    //Serial.print(command);
-    switch (command) {
-      case 1: {
-          //Serial.println(command);//int(Serial.read() /10);
-          //Serial.println(gpsData.commandTX);
-          Cycle = 1;
-          gpsData.commandTX = Cycle;
-          if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), CLIENT_ADDRESS)) {
-            uint8_t len = sizeof(buf);
-            uint8_t from;
-            delay(10);
-            if (manager.recvfromAckTimeout(buf, &len, 2000, &from)) {
-              //rf95.waitPacketSent();
-              Serial.println("Communications Check Complete.");
+            } else {
+              Serial.println("\nCommunications not working...");
             }
+            break;
           }
-          //rf95.send((uint8_t*)&gpsData, sizeof(gpsData));
-          //rf95.waitPacketSent();
-          break;
-        }
-      case 2: {
-          Cycle = 2;
-          gpsData.commandTX = Cycle; //int(Serial.read() /10);
-          if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), CLIENT_ADDRESS)) {
-            uint8_t len = sizeof(buf);
-            uint8_t from;
-            delay(10);
-            if (manager.recvfromAckTimeout(buf, &len, 2000, &from)) {
-              //rf95.waitPacketSent();
-              Serial.println("Ignition.");
+        case 2: {
+            Cycle = 2;
+            gpsData.commandTX = command; //int(Serial.read() /10);
+            if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), CLIENT_ADDRESS)) {
+                Serial.println("\nIgnition.");
             }
-          }//Serial.println(gpsData.commandTX);
-          //rf95.send((uint8_t*)&gpsData, sizeof(gpsData));
-          //rf95.waitPacketSent();
-          break;
-        }
-      case 3: {
-          Cycle = 3;
-          gpsData.commandTX = Cycle; //int(Serial.read() /10);
-          if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), CLIENT_ADDRESS)) {
-            uint8_t len = sizeof(buf);
-            uint8_t from;
-            delay(10);
-            if (manager.recvfromAckTimeout(buf, &len, 2000, &from)) {
-              //rf95.waitPacketSent();
-              Serial.println("Deployment.");
-            }
+            break;
           }
-          //Serial.println(gpsData.commandTX);
-          //rf95.send((uint8_t*)&gpsData, sizeof(gpsData));
-          //rf95.waitPacketSent();
-          break;
-        }
-      default: {
-          //Cycle = 0;
-          //gpsData.commandTX = Cycle;
-          //rf95.send((uint8_t*)&gpsData, sizeof(gpsData));
-          //rf95.waitPacketSent();
-          break;
-        }
-
-        //else if (strcmp((char*)command, "start") == 0)
-        //{
-        // Cycle = 2;
-        //}
-        //    else { Cycle = 9;}
-
-        //Serial.print(command);
+        case 3: {
+            Cycle = 3;
+            gpsData.commandTX = command; //int(Serial.read() /10);
+            if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), CLIENT_ADDRESS)) {
+                Serial.println("\nDeployment.");
+            }
+            break;
+          }
+        default: {
+            break;
+          }
+      }
     }
   }
-}
-//      break;
-
-//   case 1: {
-
-//if (Serial.available() > 0) {
-//int command = 1; //Serial.read() - '0';
-//uint8_t command[RH_RF95_MAX_MESSAGE_LEN] = {Serial.read()};
-//gpsData.commandTX = command;
-//         rf95.send(mesg, sizeof(mesg));
-//            rf95.waitPacketSent();
-//Serial.println(gpsData.commandTX);
-//Serial.println(command);
-
-//                }
-//  }
-//
-//        gpsData.commandTX = {1};
-//
-//        rf95.send((uint8_t *)&gpsData, sizeof(gpsData));
-//        rf95.waitPacketSent();
-//
-//        Serial.print(gpsData.commandTX);
-//
-//        //          if (Cycle % 2 == 0){
-//        //          }
-//        break;
-//      }
-// }
-//}
-
-//coder = ";
-//uint8_t coderlen = sizeof(coder);
-//Serial1.write(coder); //, &coderlen);
-//              Serial1.println((char*) buf);
-//          uint8_t retmesg[4] = {};
-//          uint8_t rtmlen = sizeof(retmesg);
-//          switch (command)
-//          {
-//            case 1: {
-//                // Serial.print("Ready for launch.");
-//                uint8_t mesg[1] = {1};
-//                gpsData.commandTX = mesg;
-//                //            rf95.send(mesg, sizeof(mesg));
-//                //            rf95.waitPacketSent();
-//                Serial.println(gpsData.commandTX);
-//                //if (!rf95.recv(retmesg, &rtmlen)) {
-//                //yield();
-//                //}
-//                //else {
-//                  //Serial.println("got: ");
-//                  //Serial.println((char*)retmesg);
-//                  uint8_t mesg[] = {};
-//                }
-//
-//                break;
-//              }
-//            case 2:
-//              {
-//                // Serial.print("Blast off!");
-//                uint8_t mesg[] = {"2"};
-//                rf95.send(mesg, sizeof(mesg));
-//                rf95.waitPacketSent();
-//                if (rf95.recv(retmesg, &rtmlen)) {
-//                  Serial.println((char*)retmesg);
-//                }
-//                break;
-//              }
-//            case 3:
-//              {
-//                // Serial.print("Emergency Deployment!");
-//                uint8_t mesg[2] = {"3"};
-//                rf95.send(mesg, sizeof(mesg));
-//                rf95.waitPacketSent();
-//                if (rf95.recv(retmesg, &rtmlen)) {
-//                  Serial.println((char*)retmesg);
-//                }
-//                break;
-//              }
-//            case 4:
-//              {
-//                uint8_t mesg[2] = {"0"};
-//                rf95.send(mesg, sizeof(mesg));
-//                rf95.waitPacketSent();
-//                if (rf95.recv(retmesg, &rtmlen)) {
-//                  Serial.println((char*)retmesg);
