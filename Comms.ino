@@ -2,6 +2,7 @@
 
 //byte gpsdata_buf[sizeof(gpsData)] = {4};
 
+//uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
 void sendGPS() {
   char c = GPS.read();
   // if you want to debug, this is a good time to do it!
@@ -18,12 +19,36 @@ void sendGPS() {
       return; // we can fail to parse a sentence in which case we should just wait for another
   }
 
-
   // TimerA    approximately 1 second
-  if (millis() - timer > 1330) {
+  if (millis() - timer > sendcycle) {
     digitalWrite(LED, HIGH);
-    timer = millis();
-    if (GPS.fix) {
+    gpsData.latitudeGPS = GPS.latitude;
+    gpsData.longitudeGPS = GPS.longitude;
+    gpsData.latGPS = GPS.lat;
+    gpsData.lonGPS = GPS.lon;
+    gpsData.altitudeVEC = GPS.altitude;
+    if (counter == 5) {
+      gpsData.commandRX = 0;
+      counter = 0;
+      LED_Switch = 0;
+    }
+    if (gpsData.commandRX != 0) {
+      counter = counter + 1;
+    }
+    if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), BROADCAST_ADDRESS)) {
+   //  if (rf95.send((uint8_t*)&gpsData, sizeof(gpsData))){
+      Serial.println("Sending");
+//      rf95.waitPacketSent();
+//
+    }
+    else
+    {
+      Serial.println("No reply, is server running?");
+    }
+
+
+      //delay(100);
+    if (GPS.fix && debug == true) {
       // print out the current stats
       Serial.print("Location: ");
       Serial.print(GPS.latitude, 4); Serial.print(GPS.lat);
@@ -33,90 +58,15 @@ void sendGPS() {
       //     Serial.print("Angle: "); Serial.println(GPS.angle);
       Serial.print("Altitude: "); Serial.println(GPS.altitude);
       Serial.print("Command: "); Serial.println(gpsData.commandRX);
+      Serial.print("Pitch: "); Serial.println(gpsData.PITCH);
+      Serial.print("Roll: "); Serial.println(gpsData.ROLL);
+      Serial.print("Yaw: "); Serial.println(gpsData.YAW);
       //Serial.print("Satellites: "); Serial.println((int)GPS.satellites);
       Serial.println("");
     }
 
-    gpsData.latitudeGPS = GPS.latitude;
-    gpsData.longitudeGPS = GPS.longitude;
-    gpsData.latGPS = GPS.lat;
-    gpsData.lonGPS = GPS.lon;
-    gpsData.altitudeVEC = GPS.altitude;
-    if (counter == 3) {
-      gpsData.commandRX = 0;
-      counter = 0;
-      LED_Switch = 0;
-    }
-    counter ++;
-    rf95.send((uint8_t *)&gpsData, sizeof(gpsData));
-    rf95.waitPacketSent();
-    Serial.println("Sending");
-    //  break;
-
-    //case 1: {
-
-    //return (gpsData);
-    // break;
 
 
+    timer = millis();
   }
-
 }
-
-
-//    recvCMD();
-
-
-//void recvCMD () {
-//  if (rf95.available()) {
-//    // Should be a message now
-//    uint8_t buf[RH_RF95_MAX_MESSAGE_LEN] = {};
-//    uint8_t len1 = sizeof(buf);
-//    if (rf95.recv(buf, &len1))
-//    {
-//      if (strcmp((char*)buf, "0") == 0) {
-//        counter = 0;
-//      }
-//      else if (strcmp((char*)buf, "1") == 1)
-//      {
-//        counter = 1;
-//      }
-//      else if (strcmp((char*)buf, "2") == 0)
-//      {
-//        counter = 2;
-//      }
-//      else if (strcmp((char*)buf, "3") == 0)
-//      {
-//        counter = 3;
-//      }
-//      else {
-//        counter = 0;
-//      }
-//      //counter = commandbuf;
-//      switch (counter) {
-//        case 0: {
-//            uint8_t mesg[] = "Reset";
-//            rf95.send(mesg, sizeof(mesg));
-//            rf95.waitPacketSent();
-//            digitalWrite(LED, HIGH);
-//            //digitalWrite(LED, LOW);
-//          }
-//        case 1: {
-//            uint8_t mesg[] = "ol";
-//            rf95.send(mesg, sizeof(mesg));
-//            rf95.waitPacketSent();
-//            digitalWrite(LED, HIGH);
-//            delay(2500);
-//          }
-//        case 2: {
-//            uint8_t mesg[] = "Ignition";
-//            rf95.send(mesg, sizeof(mesg));
-//            rf95.waitPacketSent();
-//            digitalWrite(LED, HIGH);
-//          }
-//
-//      }
-//    }
-//
-//  }
-//}
