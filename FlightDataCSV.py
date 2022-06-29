@@ -59,7 +59,7 @@ while True:
             prevrow = row
      #       count = 0
             row =row + 1  # print (longGPS)
-            gpsd.to_csv('/home/pi/Patience/FlightData/Flightdata.csv')
+            gpsd.to_csv('~/Patience/FlightData/Flightdata.csv')
             #print(gpsd)
             if gpsd.at[prevrow, 'CommandTX'] == '1':
                 print("Chcek Completed")
@@ -70,5 +70,8 @@ while True:
             else:
                 print(gpsd)
        # else:
-
-            time.sleep (0.1)
+            time.sleep(0.1)
+#            serialIn = input()
+#            if input()  is not None :
+#                port.write(int(serialIn)
+#                serialIn is None

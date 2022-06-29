@@ -19,6 +19,7 @@
 #define RF95_FREQ 915.0
 #define CLIENT_ADDRESS 1
 #define SERVER_ADDRESS 2
+#define BROADCAST_ADDRESS 255
 // Singleton instance of the radio driver
 RH_RF95 rf95(RFM95_CS, RFM95_INT);
 RHReliableDatagram manager(rf95, SERVER_ADDRESS);
@@ -74,7 +75,7 @@ void setup()
 int Cycle = 0;
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
 void loop()
-{ 
+{ while(1){
     uint8_t mesg[] = {};
     uint8_t buf[RH_RF95_MAX_MESSAGE_LEN] = {};
     uint8_t len = sizeof(buf);
@@ -82,7 +83,7 @@ void loop()
      // if (rf95.available()){
       uint8_t from;
       uint8_t len = sizeof(buf);
-      if (manager.recvfromAckTimeout(buf, &len, 2000, &from))
+      if (manager.recvfromAck(buf, &len, &from))
       //  if (rf95.recv(buf, &len))
       {
         //  digitalWrite(LED, HIGH);
@@ -124,7 +125,7 @@ void loop()
         case 2: {
             Cycle = 2;
             gpsData.commandTX = command; //int(Serial.read() /10);
-            if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), CLIENT_ADDRESS)) {
+            if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), BROADCAST_ADDRESS)) {
                 Serial.println("\nIgnition.");
             }
             break;
@@ -137,9 +138,22 @@ void loop()
             }
             break;
           }
+        case 9:{
+          Cycle = 9;
+          gpsData.commandTX = command;
+          if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), CLIENT_ADDRESS)) {
+            Serial.println("\nReset.");
+          }
+          break;
+        }
         default: {
             break;
           }
       }
     }
+
+//    if (Serial1.available() > 0) {
+//      Serial.print(Serial1.read());
+//    }
+}
   }
