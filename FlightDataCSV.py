@@ -62,7 +62,7 @@ while True:
             gpsd.to_csv('~/Patience/FlightData/Flightdata.csv')
             #print(gpsd)
             if gpsd.at[prevrow, 'CommandTX'] == '1':
-                print("Chcek Completed")
+                print("Check Completed")
             elif gpsd.at[prevrow, 'CommandTX'] == '2':
                 print("Ignition")
             elif gpsd.at[prevrow, 'CommandTX'] == '3':
@@ -70,7 +70,7 @@ while True:
             else:
                 print(gpsd)
        # else:
-            time.sleep(0.1)
+           # time.sleep(0.1)
 #            serialIn = input()
 #            if input()  is not None :
 #                port.write(int(serialIn)

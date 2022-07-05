@@ -11,12 +11,11 @@
 #include <SPI.h>
 #include <RH_RF95.h>
 #include <RHReliableDatagram.h>
-
 //#include <ICSP.h>
 #define RFM95_CS 12
 #define RFM95_RST 13
 #define RFM95_INT 11
-#define RF95_FREQ 915.0
+#define RF95_FREQ 902.3
 #define CLIENT_ADDRESS 1
 #define SERVER_ADDRESS 2
 #define BROADCAST_ADDRESS 255
@@ -46,7 +45,7 @@ void setup()
 
   //  pinMode(LED, OUTPUT);
   Serial.begin(115200);
-  Serial1.begin(115200);
+  //Serial1.begin(115200);
   while (!Serial) ; // Wait for serial port to be available
   pinMode(RFM95_RST, OUTPUT);
   digitalWrite(RFM95_RST, LOW);
@@ -59,101 +58,112 @@ void setup()
   // Defaults after init are 434.0MHz, 13dBm, Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on
   if (!manager.init()) {
     Serial.println("init failed");
+  } else {
+    Serial.println("\nReliable datagram init OK!");
   }
-  Serial.println("\nReliable datagram init OK!");
-  //rf95.setFrequency(915.0);
-//  if (!rf95.setFrequency(RF95_FREQ)) {
-//    Serial.println("setFrequency failed");
-////    while (1);
-//  }
-//  Serial.print("Set Freq to: "); Serial.println(RF95_FREQ);
+//
+      if (!rf95.setFrequency(RF95_FREQ)) {
+        Serial.println("setFrequency failed");
+    //    while (1);
+      }
+  //    Serial.print("Set Freq to: "); Serial.println(RF95_FREQ);
 
   // you can set transmitter powers from 5 to 23 dBm:
   rf95.setTxPower(20, false);
+  //  Wire.setClock(400000); // 400KHz
 }
 
 int Cycle = 0;
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
-void loop()
-{ while(1){
-    uint8_t mesg[] = {};
-    uint8_t buf[RH_RF95_MAX_MESSAGE_LEN] = {};
+    uint8_t from;
     uint8_t len = sizeof(buf);
-    if (manager.available()) {
-     // if (rf95.available()){
-      uint8_t from;
-      uint8_t len = sizeof(buf);
-      if (manager.recvfromAck(buf, &len, &from))
+
+void loop() {
+ // while(1) {
+  //uint8_t mesg[] = {};
+  //uint8_t buf[RH_RF95_MAX_MESSAGE_LEN] = {};
+  delay(10);
+  //uint8_t len = sizeof(buf);
+  if (manager.available()) {
+    // if (rf95.available()){
+    if (manager.recvfromAck(buf, &len, &from))
       //  if (rf95.recv(buf, &len))
-      {
-        //  digitalWrite(LED, HIGH);
+    {
+      //  digitalWrite(LED, HIGH);
 
-        Serial.print("...");
-        memcpy(&gpsData, buf, sizeof(gpsData));
-        delay(10);
-        Serial1.print(gpsData.latitudeGPS, 6); Serial1.print('\n');
-        Serial1.print(gpsData.longitudeGPS, 6); Serial1.print('\n');
-        Serial1.print(gpsData.latGPS); Serial1.print('\n');
-        Serial1.print(gpsData.lonGPS); Serial1.print('\n');
-        Serial1.print(gpsData.altitudeGPS, 1); Serial1.print('\n');
-        Serial1.print(gpsData.commandTX, DEC); Serial1.print('\n');
-        Serial1.print(gpsData.ROLL, 2); Serial1.print('\n');
-        Serial1.print(gpsData.PITCH, 2); Serial1.print('\n');
-        Serial1.print(gpsData.YAW, 2); Serial1.print('\n');
-//        if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), from)) {
-//          Serial.println("...");
-//        }
-      }
+      Serial.print("...");
+     // memcpy(&gpsData, buf, sizeof(buf));
+      //delay(100);
+//      Serial1.print(gpsData.latitudeGPS, 6); Serial1.print('\n');
+//      Serial1.print(gpsData.longitudeGPS, 6); Serial1.print('\n');
+//      Serial1.print(gpsData.latGPS); Serial1.print('\n');
+//      Serial1.print(gpsData.lonGPS); Serial1.print('\n');
+//      Serial1.print(gpsData.altitudeGPS, 1); Serial1.print('\n');
+//      Serial1.print(gpsData.commandTX, DEC); Serial1.print('\n');
+//      Serial1.print(gpsData.ROLL, 2); Serial1.print('\n');
+//      Serial1.print(gpsData.PITCH, 2); Serial1.print('\n');
+//      Serial1.print(gpsData.YAW, 2); Serial1.print('\n');
+      //        if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), from)) {
+      //          Serial.println("...");
+      //        }
     }
-    if (Serial.available() > 0) {
-      int command = Serial.read() - '0'; //(BUFFER_SIZE);
-      //Serial.print(command);
-      switch (command) {
-        case 1: {
-            Cycle = 1;
-            gpsData.commandTX = command; //Cycle;
-            //Serial.println("W");
-            if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), CLIENT_ADDRESS)) {
-              
-                Serial.println("\nCommunications Check Complete.");
-
-            } else {
-              Serial.println("\nCommunications not working...");
-            }
-            break;
-          }
-        case 2: {
-            Cycle = 2;
-            gpsData.commandTX = command; //int(Serial.read() /10);
-            if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), BROADCAST_ADDRESS)) {
-                Serial.println("\nIgnition.");
-            }
-            break;
-          }
-        case 3: {
-            Cycle = 3;
-            gpsData.commandTX = command; //int(Serial.read() /10);
-            if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), CLIENT_ADDRESS)) {
-                Serial.println("\nDeployment.");
-            }
-            break;
-          }
-        case 9:{
-          Cycle = 9;
-          gpsData.commandTX = command;
-          if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), CLIENT_ADDRESS)) {
-            Serial.println("\nReset.");
-          }
-          break;
-        }
-        default: {
-            break;
-          }
-      }
+    else{
+      Serial.println("");
     }
-
-//    if (Serial1.available() > 0) {
-//      Serial.print(Serial1.read());
-//    }
-}
   }
+  //delay(10);
+  //    if (Serial.available() > 0) {
+  //      int command = Serial.read() - '0'; //(BUFFER_SIZE);
+  //      //Serial.print(command);
+  //      switch (command) {
+  //        case 1: {
+  //            Cycle = 1;
+  //            gpsData.commandTX = command; //Cycle;
+  //            //Serial.println("W");
+  //            if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), CLIENT_ADDRESS)) {
+  //
+  //              Serial.println("\nCommunications Check Complete.");
+  //
+  //            } else {
+  //              Serial.println("\nCommunications not working...");
+  //            }
+  //            break;
+  //          }
+  //        case 2: {
+  //            Cycle = 2;
+  //            gpsData.commandTX = command; //int(Serial.read() /10);
+  //            if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), CLIENT_ADDRESS)) {
+  //              if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), BROADCAST_ADDRESS)) {
+  //                Serial.println("\nIgnition.");
+  //              }
+  //            }
+  //            break;
+  //          }
+  //        case 3: {
+  //            Cycle = 3;
+  //            gpsData.commandTX = command; //int(Serial.read() /10);
+  //            if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), CLIENT_ADDRESS)) {
+  //              Serial.println("\nDeployment.");
+  //            }
+  //            break;
+  //          }
+  //        case 9: {
+  //            Cycle = 9;
+  //            gpsData.commandTX = command;
+  //            if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), CLIENT_ADDRESS)) {
+  //              Serial.println("\nReset.");
+  //            }
+  //            break;
+  //          }
+  //        default: {
+  //            break;
+  //          }
+  //      }
+  //    }
+
+  //    if (Serial1.available() > 0) {
+  //      Serial.print(Serial1.read());
+  // }
+  //}
+
+}
