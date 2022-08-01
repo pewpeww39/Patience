@@ -1,5 +1,9 @@
+from os import system, name
+#from time import sleep
 import serial
 import time
+import board
+#import digitalio
 import struct
 import pandas as pd
 port = serial.Serial("/dev/ttyS0", baudrate=115200)
@@ -7,18 +11,16 @@ count = 0
 prevrow = 0
 row = 0
 gpsd = pd.DataFrame(data=[],index=[], columns=['Latitude','Lat','Longitude','Lon','Altitude','CommandTX','Roll','Pitch','Yaw'])
-#while port.in_waiting:
-#port.flushInput()
+def clear ():
+    if name == 'nt':
+        _ = system('cls')
+    else:
+        _ = system('clear')
 while True:
-#    if port.in_waiting >= 18:
-#while True:
-       # if count == 0:
- #           port.readline()
-            RFID = port.read_until() #.read(11)
+    try:       # if count == 0:
+            RFID = port.read_until()
             latGPS = RFID.decode()
             gpsd.at[row, 'Latitude'] = latGPS[:-1]
-   #         count = count + 1
-           # print (latGPS)
        # elif count == 1 :
             RFID = port.read_until()
             longGPS = RFID.decode()
@@ -68,10 +70,13 @@ while True:
             elif gpsd.at[prevrow, 'CommandTX'] == '3':
                 print("Deployment")
             else:
-                print(gpsd)
+                clear()
+                print(gpsd.iloc[prevrow])
        # else:
            # time.sleep(0.1)
-#            serialIn = input()
-#            if input()  is not None :
-#                port.write(int(serialIn)
-#                serialIn is None
+#            serialIn = raw_input()
+#            if port.in_waiting > 0 :
+ #               serialIn = 1 #port.read(port.in_waiting)
+  #              port.write(serialIn)
+    except:
+        raise TypeError("error")
