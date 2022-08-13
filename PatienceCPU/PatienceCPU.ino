@@ -260,8 +260,8 @@ void aqAHRS() {
   cal.calibrate(gyro);
   // Gyroscope needs to be converted from Rad/s to Degree/s
   // the rest are not unit-important
-  gx = gyro.gyro.x * SENSORS_RADS_TO_DPS;
-  gy = gyro.gyro.z * SENSORS_RADS_TO_DPS;
+  gx = gyro.gyro.x * -SENSORS_RADS_TO_DPS;
+  gy = gyro.gyro.z * -SENSORS_RADS_TO_DPS;
   gz = gyro.gyro.y * -SENSORS_RADS_TO_DPS;
 
   // Update the SensorFusion filter
