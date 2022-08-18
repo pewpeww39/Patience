@@ -13,6 +13,7 @@
 #include <Adafruit_FXOS8700.h>
 #include <Adafruit_Sensor_Calibration.h>
 #include <Adafruit_AHRS.h>
+#include <Wire.h>
 
 #define CLIENT_ADDRESS 1
 #define SERVER_ADDRESS 2
@@ -49,6 +50,10 @@ int deployCheck = 0;
 int ignitCheck = 0;
 int sysCheck = 0;
 int sendcycle = 1500;
+const byte PICO_I2C_ADDRESS = 0x55;
+const byte PICO_I2C_SDA = 26;
+const byte PICO_I2C_SCL = 27;
+const byte PICO_LED = 25;
 struct dataStruct {
   float latitudeGPS;// = 1111.111111;
   float longitudeGPS;// = 1111.111111;
@@ -59,6 +64,7 @@ struct dataStruct {
   float ROLL;
   float PITCH;
   float YAW;
+  int rpiRX = 9;
 } gpsData;
 
 Adafruit_Sensor_Calibration_EEPROM cal;
@@ -81,6 +87,12 @@ void setup()
   GPSSerial.setTX(8); //(4);
   GPSSerial.setRX(9); //(5);
   Serial.begin(115200); 
+  Wire.begin();
+  Wire1.setSDA(PICO_I2C_SDA);
+  Wire1.setSCL(PICO_I2C_SCL);
+  Wire1.begin(PICO_I2C_ADDRESS);
+  Wire1.onReceive(i2c_rx);
+  Wire1.onRequest(i2c_tx);
   pinMode(LED, OUTPUT);
   digitalWrite(LED, LOW);
   while (!Serial & debug == true) {
@@ -262,12 +274,12 @@ void aqAHRS() {
   // the rest are not unit-important
   gx = gyro.gyro.x * -SENSORS_RADS_TO_DPS;
   gy = gyro.gyro.z * -SENSORS_RADS_TO_DPS;
-  gz = gyro.gyro.y * -SENSORS_RADS_TO_DPS;
+  gz = gyro.gyro.y * SENSORS_RADS_TO_DPS;
 
   // Update the SensorFusion filter
   filter.update(gx, gy, gz,
-                accel.acceleration.x, accel.acceleration.z, - accel.acceleration.y,
-                mag.magnetic.x, mag.magnetic.z, - mag.magnetic.y);
+                -accel.acceleration.x, -accel.acceleration.z, accel.acceleration.y,
+                -mag.magnetic.x, -mag.magnetic.z, mag.magnetic.y);
 #if defined(AHRS_DEBUG_OUTPUT)
   Serial.print("Update took "); Serial.print(millis() - timestamp); Serial.println(" ms");
 #endif
@@ -322,6 +334,7 @@ void sendGPS() {
     if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(buf), BROADCAST_ADDRESS)) {
       //  if (rf95.send((uint8_t*)&gpsData, sizeof(gpsData))){
       Serial.println("Sending");
+      Wire1.write(gpsData.commandRX);
       //      rf95.waitPacketSent();
       //
     }
