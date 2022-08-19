@@ -13,7 +13,7 @@
 #include <Adafruit_FXOS8700.h>
 #include <Adafruit_Sensor_Calibration.h>
 #include <Adafruit_AHRS.h>
-#include <Wire.h>
+//#include <Wire.h>
 
 #define CLIENT_ADDRESS 1
 #define SERVER_ADDRESS 2
@@ -87,12 +87,12 @@ void setup()
   GPSSerial.setTX(8); //(4);
   GPSSerial.setRX(9); //(5);
   Serial.begin(115200); 
-  Wire.begin();
-  Wire1.setSDA(PICO_I2C_SDA);
-  Wire1.setSCL(PICO_I2C_SCL);
-  Wire1.begin(PICO_I2C_ADDRESS);
-  Wire1.onReceive(i2c_rx);
-  Wire1.onRequest(i2c_tx);
+//  Wire1.begin();
+//  Wire1.setSDA(PICO_I2C_SDA);
+//  Wire1.setSCL(PICO_I2C_SCL);
+//  Wire1.begin(PICO_I2C_ADDRESS);
+//  Wire1.onReceive(i2c_rx);
+//  Wire1.onRequest(i2c_tx);
   pinMode(LED, OUTPUT);
   digitalWrite(LED, LOW);
   while (!Serial & debug == true) {
@@ -142,7 +142,13 @@ void setup()
   filter.begin(FILTER_UPDATE_RATE_HZ);
   timestamp = millis();
   
-  Wire.setClock(400000); // 400KHz
+  Wire.setClock(400000); // 400KHz  
+  for ( int startupBeacon=0; startupBeacon < 3; startupBeacon++) {
+    digitalWrite(LED, HIGH);
+    delay(500);
+    digitalWrite(LED, LOW);
+    delay(500);
+  }
 }
 
 // Dont put this on the stack:
@@ -334,7 +340,7 @@ void sendGPS() {
     if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(buf), BROADCAST_ADDRESS)) {
       //  if (rf95.send((uint8_t*)&gpsData, sizeof(gpsData))){
       Serial.println("Sending");
-      Wire1.write(gpsData.commandRX);
+    //  Wire1.write(gpsData.commandRX);
       //      rf95.waitPacketSent();
       //
     }
@@ -369,3 +375,11 @@ void sendGPS() {
     digitalWrite(LED, LOW);
   }
 }
+
+//void i2c_rx(int len2) {
+//  
+//}
+//
+//void i2c_tx() {
+//  
+//}
