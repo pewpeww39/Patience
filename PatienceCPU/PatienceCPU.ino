@@ -228,7 +228,7 @@ void Commands() {
           Serial.println("Check Complete");
           LED_Switch = 1;
           sysCheck = 1;
-          sendcycle = 1000;
+          sendcycle = 800;
           counter = 0;
           digitalWrite(26, HIGH);
         }
