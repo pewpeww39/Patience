@@ -173,9 +173,9 @@ void loop()
  //           manager.waitPacketSent();
       //}
     } //else if (debug == true){      
-      Serial.print("Pitch: "); Serial.println(launchpadPITCH);
-      Serial.print("Roll: "); Serial.println(launchpadROLL);
-      Serial.print("Yaw: "); Serial.println(launchpadYAW);
+      Serial.print("Pitch: "); Serial.println(gpsData.lpPITCH);
+      Serial.print("Roll: "); Serial.println(gpsData.lpROLL);
+      Serial.print("Yaw: "); Serial.println(gpsData.lpYAW);
    // }
     
       
