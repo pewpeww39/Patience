@@ -13,9 +13,9 @@
 #include <Adafruit_FXOS8700.h>
 #include <Adafruit_Sensor_Calibration.h>
 #include <Adafruit_AHRS.h>
-#include <Wire.h>
+//#include <Wire.h>
 
-#define CLIENT_ADDRESS 1
+#define PATIENCE_ADDRESS 1
 #define SERVER_ADDRESS 2
 #define LAUNCHPAD_ADDRESS 3
 #define BROADCAST_ADDRESS 255
@@ -34,7 +34,7 @@
 
 Adafruit_GPS GPS(&GPSSerial);
 RH_RF95 driver(RFM95_CS, RFM95_INT);
-RHReliableDatagram manager(driver, CLIENT_ADDRESS);
+RHReliableDatagram manager(driver, PATIENCE_ADDRESS);
 Adafruit_Sensor *accelerometer, *gyroscope, *magnetometer;
 Adafruit_NXPSensorFusion filter; // slowest
 Adafruit_FXOS8700 fxos = Adafruit_FXOS8700(0x8700A, 0x8700B);
@@ -50,11 +50,32 @@ int deployCheck = 0;
 int ignitCheck = 0;
 int sysCheck = 0;
 int sendcycle = 1500;
+<<<<<<< HEAD
 const byte PICO_I2C_ADDRESS = 0x55;
 const byte PICO_I2C_SDA = 26;
 const byte PICO_I2C_SCL = 27;
 static char buff[100];
 struct dataStruct {
+=======
+//const byte PICO_I2C_ADDRESS = 0x55;
+//const byte PICO_I2C_SDA = 26;
+//const byte PICO_I2C_SCL = 27;
+//const byte PICO_LED = 25;
+struct TXdata {
+>>>>>>> 18358d4f7be17f76758e54f5bd204ce2aceda535
+  float latitudeGPS;// = 1111.111111;
+  float longitudeGPS;// = 1111.111111;
+  char latGPS;// = {'1'};
+  char lonGPS;// = {'1'};
+  float altitudeGPS;//=111.1;
+  int commandTX = 9;
+  float ROLL;
+  float PITCH;
+  float YAW;
+  int rpiRX = 9;
+} gpsData;
+
+struct RXdata {
   float latitudeGPS;// = 1111.111111;
   float longitudeGPS;// = 1111.111111;
   char latGPS;// = {'1'};
@@ -65,7 +86,7 @@ struct dataStruct {
   float PITCH;
   float YAW;
   int rpiRX = 9;
-} gpsData;
+} rxData;
 
 Adafruit_Sensor_Calibration_EEPROM cal;
 
@@ -87,13 +108,24 @@ void setup()
   GPSSerial.setTX(8); //(4);
   GPSSerial.setRX(9); //(5);
   Serial.begin(115200); 
+<<<<<<< HEAD
   Wire1.begin();
   Wire1.setSDA(PICO_I2C_SDA);
   Wire1.setSCL(PICO_I2C_SCL);
   Wire1.begin(PICO_I2C_ADDRESS);
+=======
+//  Wire1.begin();
+//  Wire1.setSDA(PICO_I2C_SDA);
+//  Wire1.setSCL(PICO_I2C_SCL);
+//  Wire1.begin(PICO_I2C_ADDRESS);
+>>>>>>> 18358d4f7be17f76758e54f5bd204ce2aceda535
 //  Wire1.onReceive(i2c_rx);
 //  Wire1.onRequest(i2c_tx);
   pinMode(LED, OUTPUT);
+  pinMode(26, OUTPUT);
+  pinMode(GP17, OUTPUT);
+  digitalWrite(GP17, LOW);
+  digitalWrite(26, LOW);
   digitalWrite(LED, LOW);
   while (!Serial & debug == true) {
     yield();
@@ -142,7 +174,13 @@ void setup()
   filter.begin(FILTER_UPDATE_RATE_HZ);
   timestamp = millis();
   
-  Wire.setClock(400000); // 400KHz
+  Wire.setClock(400000); // 400KHz  
+  for ( int startupBeacon=0; startupBeacon < 3; startupBeacon++) {
+    digitalWrite(LED, HIGH);
+    delay(500);
+    digitalWrite(LED, LOW);
+    delay(500);
+  }
 }
 
 // Dont put this on the stack:
@@ -167,7 +205,7 @@ void loop()
   }
   aqAHRS();
       if (((abs(gpsData.ROLL) >= 80) || (abs(gpsData.PITCH) >= 80)) & deployCheck == 0 & sysCheck == 1 ) {
-        gpsData.commandRX = 3;
+        gpsData.commandTX = 3;
         deployCheck = 1;
       }
 
@@ -176,8 +214,9 @@ void loop()
     uint8_t from;
     if (manager.recvfromAckTimeout(buf, &len, 2000, &from))
     {
-      memmove((uint8_t*)&gpsData, buf, sizeof(gpsData));
-      Serial.print("Receiving: "); Serial.println(gpsData.commandRX);
+      memmove((uint8_t*)&rxData, buf, sizeof(rxData));
+      gpsData.commandTX = rxData.commandRX;
+      Serial.print("Receiving: "); Serial.println(gpsData.commandTX);
 
     }
     else
@@ -191,7 +230,7 @@ void loop()
 }
 
 void Commands() {
-  switch (gpsData.commandRX) {
+  switch (gpsData.commandTX) {
 
     case 0: {
         digitalWrite(LED, LOW);
@@ -204,8 +243,9 @@ void Commands() {
           Serial.println("Check Complete");
           LED_Switch = 1;
           sysCheck = 1;
-          sendcycle = 400;
+          sendcycle = 800;
           counter = 0;
+          digitalWrite(26, HIGH);
         }
         digitalWrite(LED, HIGH);
         break;
@@ -239,7 +279,7 @@ void Commands() {
         sysCheck = 0;
         ignitCheck = 0;
         deployCheck = 0;
-        sendcycle = 1500;
+        sendcycle = 2500;
         break;
       }
     default: {
@@ -293,9 +333,9 @@ void aqAHRS() {
 
 #if defined(AHRS_DEBUG_OUTPUT)
   Serial.print("Raw: ");
-  Serial.print(accel.acceleration.x, 4); Serial.print(", ");
-  Serial.print(accel.acceleration.z, 4); Serial.print(", ");
-  Serial.print(-accel.acceleration.y, 4); Serial.print(", ");
+  Serial.print(-accel.acceleration.x, 4); Serial.print(", ");
+  Serial.print(-accel.acceleration.z, 4); Serial.print(", ");
+  Serial.print(accel.acceleration.y, 4); Serial.print(", ");
   Serial.print(gx, 4); Serial.print(", ");
   Serial.print(gy, 4); Serial.print(", ");
   Serial.print(gz, 4); Serial.print(", ");
@@ -324,18 +364,18 @@ void sendGPS() {
     gpsData.lonGPS = GPS.lon;
     gpsData.altitudeGPS = GPS.altitude;
     if (counter == 3) {
-      gpsData.commandRX = 0;
+      gpsData.commandTX = 0;
       counter = 0;
       LED_Switch = 0;
     }
-    if (gpsData.commandRX != 0) {
+    if (gpsData.commandTX != 0) {
       counter = counter + 1;
     }
-    if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(buf), BROADCAST_ADDRESS)) {
+    if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(buf), LAUNCHPAD_ADDRESS)) {
       //  if (rf95.send((uint8_t*)&gpsData, sizeof(gpsData))){
       Serial.println("Sending");
-      Wire1.write(gpsData.commandRX);
-      //      rf95.waitPacketSent();
+    //  Wire1.write(gpsData.commandRX);
+            manager.waitPacketSent();
       //
     }
     else
@@ -355,7 +395,7 @@ void sendGPS() {
       Serial.print("Speed (knots): "); Serial.println(GPS.speed);
       //     Serial.print("Angle: "); Serial.println(GPS.angle);
       Serial.print("Altitude: "); Serial.println(GPS.altitude);
-      Serial.print("Command: "); Serial.println(gpsData.commandRX);
+      Serial.print("Command: "); Serial.println(gpsData.commandTX);
       Serial.print("Pitch: "); Serial.println(gpsData.PITCH);
       Serial.print("Roll: "); Serial.println(gpsData.ROLL);
       Serial.print("Yaw: "); Serial.println(gpsData.YAW);
@@ -370,6 +410,7 @@ void sendGPS() {
   }
 }
 
+<<<<<<< HEAD
 void i2c_rx(int len2){
   int ii;
   for (ii=0; ii<len2; ii++) buff [ii] = Wire1.read();
@@ -378,3 +419,12 @@ void i2c_rx(int len2){
 
 void i2c_tx() {
 }
+=======
+//void i2c_rx(int len2) {
+//  
+//}
+//
+//void i2c_tx() {
+//  
+//}
+>>>>>>> 18358d4f7be17f76758e54f5bd204ce2aceda535
