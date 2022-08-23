@@ -53,7 +53,7 @@ int sendcycle = 1500;
 const byte PICO_I2C_ADDRESS = 0x55;
 const byte PICO_I2C_SDA = 26;
 const byte PICO_I2C_SCL = 27;
-const byte PICO_LED = 25;
+static char buff[100];
 struct dataStruct {
   float latitudeGPS;// = 1111.111111;
   float longitudeGPS;// = 1111.111111;
@@ -87,12 +87,12 @@ void setup()
   GPSSerial.setTX(8); //(4);
   GPSSerial.setRX(9); //(5);
   Serial.begin(115200); 
-  Wire.begin();
+  Wire1.begin();
   Wire1.setSDA(PICO_I2C_SDA);
   Wire1.setSCL(PICO_I2C_SCL);
   Wire1.begin(PICO_I2C_ADDRESS);
-  Wire1.onReceive(i2c_rx);
-  Wire1.onRequest(i2c_tx);
+//  Wire1.onReceive(i2c_rx);
+//  Wire1.onRequest(i2c_tx);
   pinMode(LED, OUTPUT);
   digitalWrite(LED, LOW);
   while (!Serial & debug == true) {
@@ -368,4 +368,13 @@ void sendGPS() {
     timer = millis();
     digitalWrite(LED, LOW);
   }
+}
+
+void i2c_rx(int len2){
+  int ii;
+  for (ii=0; ii<len2; ii++) buff [ii] = Wire1.read();
+  buff[ii] = 0;
+}
+
+void i2c_tx() {
 }
