@@ -285,14 +285,14 @@ void aqAHRS() {
   cal.calibrate(gyro);
   // Gyroscope needs to be converted from Rad/s to Degree/s
   // the rest are not unit-important
-  gx = gyro.gyro.x * SENSORS_RADS_TO_DPS;
-  gy = gyro.gyro.z * SENSORS_RADS_TO_DPS;
-  gz = gyro.gyro.y * -SENSORS_RADS_TO_DPS;
+  gx = gyro.gyro.x * -SENSORS_RADS_TO_DPS;
+  gy = gyro.gyro.z * -SENSORS_RADS_TO_DPS;
+  gz = gyro.gyro.y * SENSORS_RADS_TO_DPS;
 
   // Update the SensorFusion filter
   filter.update(gx, gy, gz,
-                accel.acceleration.x, accel.acceleration.z, - accel.acceleration.y,
-                mag.magnetic.x, mag.magnetic.z, - mag.magnetic.y);
+                -accel.acceleration.x, -accel.acceleration.z, accel.acceleration.y,
+                -mag.magnetic.x, -mag.magnetic.z, mag.magnetic.y);
 #if defined(AHRS_DEBUG_OUTPUT)
   Serial.print("Update took "); Serial.print(millis() - timestamp); Serial.println(" ms");
 #endif

@@ -50,11 +50,19 @@ int deployCheck = 0;
 int ignitCheck = 0;
 int sysCheck = 0;
 int sendcycle = 1500;
+<<<<<<< HEAD
+const byte PICO_I2C_ADDRESS = 0x55;
+const byte PICO_I2C_SDA = 26;
+const byte PICO_I2C_SCL = 27;
+static char buff[100];
+struct dataStruct {
+=======
 //const byte PICO_I2C_ADDRESS = 0x55;
 //const byte PICO_I2C_SDA = 26;
 //const byte PICO_I2C_SCL = 27;
 //const byte PICO_LED = 25;
 struct TXdata {
+>>>>>>> 18358d4f7be17f76758e54f5bd204ce2aceda535
   float latitudeGPS;// = 1111.111111;
   float longitudeGPS;// = 1111.111111;
   char latGPS;// = {'1'};
@@ -100,10 +108,17 @@ void setup()
   GPSSerial.setTX(8); //(4);
   GPSSerial.setRX(9); //(5);
   Serial.begin(115200); 
+<<<<<<< HEAD
+  Wire1.begin();
+  Wire1.setSDA(PICO_I2C_SDA);
+  Wire1.setSCL(PICO_I2C_SCL);
+  Wire1.begin(PICO_I2C_ADDRESS);
+=======
 //  Wire1.begin();
 //  Wire1.setSDA(PICO_I2C_SDA);
 //  Wire1.setSCL(PICO_I2C_SCL);
 //  Wire1.begin(PICO_I2C_ADDRESS);
+>>>>>>> 18358d4f7be17f76758e54f5bd204ce2aceda535
 //  Wire1.onReceive(i2c_rx);
 //  Wire1.onRequest(i2c_tx);
   pinMode(LED, OUTPUT);
@@ -395,6 +410,16 @@ void sendGPS() {
   }
 }
 
+<<<<<<< HEAD
+void i2c_rx(int len2){
+  int ii;
+  for (ii=0; ii<len2; ii++) buff [ii] = Wire1.read();
+  buff[ii] = 0;
+}
+
+void i2c_tx() {
+}
+=======
 //void i2c_rx(int len2) {
 //  
 //}
@@ -402,3 +427,4 @@ void sendGPS() {
 //void i2c_tx() {
 //  
 //}
+>>>>>>> 18358d4f7be17f76758e54f5bd204ce2aceda535
