@@ -6,6 +6,7 @@
 // Tested with Anarduino MiniWirelessLoRa, Rocket Scream Mini Ultra Pro with the RFM95W
 
 #include <RHReliableDatagram.h>
+#include <RHDatagram.h>
 #include <RH_RF95.h>
 #include <SPI.h>
 #include <Adafruit_GPS.h>
@@ -14,7 +15,7 @@
 #include <Adafruit_Sensor_Calibration.h>
 #include <Adafruit_AHRS.h>
 
-#define CLIENT_ADDRESS 1
+#define PATIENCE_ADDRESS 1
 #define SERVER_ADDRESS 2
 #define LAUNCHPAD_ADDRESS 3
 #define BROADCAST_ADDRESS 255
@@ -25,10 +26,9 @@
 #define GPSSerial Serial2
 #define GPSECHO false
 #define LED 25
-#define RF95_FREQ 902.3
 #define FILTER_UPDATE_RATE_HZ 100
 #define PRINT_EVERY_N_UPDATES 10
-#define debug false
+#define debug true
 #define GP17 17
 
 Adafruit_GPS GPS(&GPSSerial);
@@ -44,11 +44,15 @@ uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
 uint16_t          addr = 1;
 uint32_t timestamp;
 int counter = 0;
+int counterB = 0;
 int LED_Switch = 0;
 int deployCheck = 0;
 int ignitCheck = 0;
 int sysCheck = 0;
 int sendcycle = 1500;
+float launchpadPITCH;
+float launchpadROLL;
+float launchpadYAW;
 struct dataStruct {
   float latitudeGPS;// = 1111.111111;
   float longitudeGPS;// = 1111.111111;
@@ -59,6 +63,10 @@ struct dataStruct {
   float ROLL;
   float PITCH;
   float YAW;
+  int rpiRX = 9;
+  float lpROLL;
+  float lpPITCH;
+  float lpYAW;
 } gpsData;
 
 Adafruit_Sensor_Calibration_EEPROM cal;
@@ -95,19 +103,23 @@ void setup()
   //  GPS.sendCommand(PGCMD_ANTENNA);
   //  delay(100);
   //  GPSSerial.println(PMTK_Q_RELEASE);
-  //  delay(100);
+  delay(100);
   pinMode(RFM95_RST, OUTPUT);
   digitalWrite(RFM95_RST, LOW);
   delay(100);
   digitalWrite(RFM95_RST, HIGH);
   delay(100);
-  if (!manager.init()){
-    Serial.println("init failed");}
+  
+  if (!manager.init()) {
+    Serial.println("Manager init failed");
+  } 
+  else if(manager.init()){
+    Serial.println("Manager initialized.");
+  }
   // you can set transmitter powers from 5 to 23 dBm:
   driver.setTxPower(20, false);
   if (!driver.setFrequency(RF95_FREQ)) {
     Serial.println("setFrequency failed");
-    //    while (1);
   }
   if (!cal.begin()) {
     Serial.println("Failed to initialize calibration helper");
@@ -129,39 +141,74 @@ void setup()
   timestamp = millis();
 
   Wire.setClock(400000); // 400KHz
+  for ( int startupBeacon=0; startupBeacon < 3; startupBeacon++) {
+    digitalWrite(LED, HIGH);
+    delay(500);
+    digitalWrite(LED, LOW);
+    delay(500);
+  }
+Serial.println("Setup Complete");
 }
 
 void loop()
 {
-  while (1) {
-    if (manager.available()) {
-      uint8_t len = sizeof(buf);
-      uint8_t from;
-      if (manager.recvfromAckTimeout(buf, &len, 2000, &from))
-      {
-        memmove((uint8_t*)&gpsData, buf, sizeof(gpsData));
-        Serial.print("Receiving: "); Serial.println(gpsData.commandRX);
-      }
-      else
-      {
-        Serial.println("No reply, is rf95_reliable_datagram_server running?");
-      }
+  aqAHRS();
+  if (manager.available()) {
+    uint8_t len = sizeof(buf);
+    uint8_t from;
+    if (manager.recvfromAckTimeout(buf, &len, 2000, &from))
+    {
+      //Serial.print("Receiving: "); Serial.println(gpsData.commandRX);
+      LED_Switch = 1;
+      if (from == PATIENCE_ADDRESS) {
+      memmove((uint8_t*)&gpsData, buf, sizeof(gpsData));
+      if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(buf), SERVER_ADDRESS) & debug == true) {
+      //manager.waitPacketSent();
+      Serial.println("Forwarding DATA");
     }
-    Commands();
-    if (millis() - timer > 1330) {
-      // digitalWrite(LED, HIGH);
-      if (counter >= 3) {
-        gpsData.commandRX = 0;
-        counter = 0;
-        LED_Switch = 0;
       }
-      if (gpsData.commandRX != 0) {
-        counter = counter + 1;
-      }
-      timer = millis();
+    else if (from == SERVER_ADDRESS & debug == true){
+     // if(manager.sendto((uint8_t*)&gpsData, sizeof(buf), PATIENCE_ADDRESS)) {
+        Serial.println("Receiving cmds");  
+ //           manager.waitPacketSent();
+      //}
+    } //else if (debug == true){      
+      Serial.print("Pitch: "); Serial.println(gpsData.lpPITCH);
+      Serial.print("Roll: "); Serial.println(gpsData.lpROLL);
+      Serial.print("Yaw: "); Serial.println(gpsData.lpYAW);
+   // }
+    
+      
+    } else
+    {
+      Serial.println("No reply, is rf95_reliable_datagram_server running?");
     }
   }
+  Commands();
+  if (millis() - timer > 1330) {
+    // digitalWrite(LED, HIGH);
+    if (counter >= 3) {
+      gpsData.commandRX = 0;
+      counter = 0;
+    }
+    if (gpsData.commandRX != 0) {
+      counter = counter + 1;
+      
+    }
+    timer = millis();
+  }
+  if (LED_Switch == 1){
+    digitalWrite(LED, HIGH);
+  } else {
+    digitalWrite(LED, LOW);
+  }
+  if (counterB >= 1330){
+      LED_Switch = 0;
+      counterB =0;
+  }
+  counterB++;
 }
+
 
 void Commands() {
   switch (gpsData.commandRX) {
@@ -249,14 +296,14 @@ void aqAHRS() {
   cal.calibrate(gyro);
   // Gyroscope needs to be converted from Rad/s to Degree/s
   // the rest are not unit-important
-  gx = gyro.gyro.x * SENSORS_RADS_TO_DPS;
-  gy = gyro.gyro.z * SENSORS_RADS_TO_DPS;
-  gz = gyro.gyro.y * -SENSORS_RADS_TO_DPS;
+  gx = gyro.gyro.x * -SENSORS_RADS_TO_DPS;
+  gy = gyro.gyro.z * -SENSORS_RADS_TO_DPS;
+  gz = gyro.gyro.y * SENSORS_RADS_TO_DPS;
 
   // Update the SensorFusion filter
   filter.update(gx, gy, gz,
-                accel.acceleration.x, accel.acceleration.z, - accel.acceleration.y,
-                mag.magnetic.x, mag.magnetic.z, - mag.magnetic.y);
+                -accel.acceleration.x, -accel.acceleration.z, accel.acceleration.y,
+                -mag.magnetic.x, -mag.magnetic.z, mag.magnetic.y);
 #if defined(AHRS_DEBUG_OUTPUT)
   Serial.print("Update took "); Serial.print(millis() - timestamp); Serial.println(" ms");
 #endif
@@ -270,9 +317,9 @@ void aqAHRS() {
 
 #if defined(AHRS_DEBUG_OUTPUT)
   Serial.print("Raw: ");
-  Serial.print(accel.acceleration.x, 4); Serial.print(", ");
-  Serial.print(accel.acceleration.z, 4); Serial.print(", ");
-  Serial.print(-accel.acceleration.y, 4); Serial.print(", ");
+  Serial.print(-accel.acceleration.x, 4); Serial.print(", ");
+  Serial.print(-accel.acceleration.z, 4); Serial.print(", ");
+  Serial.print(accel.acceleration.y, 4); Serial.print(", ");
   Serial.print(gx, 4); Serial.print(", ");
   Serial.print(gy, 4); Serial.print(", ");
   Serial.print(gz, 4); Serial.print(", ");
@@ -281,61 +328,61 @@ void aqAHRS() {
   Serial.print(-mag.magnetic.y, 4); Serial.println("");
 #endif
 
-  gpsData.ROLL = abs(filter.getRoll());
-  gpsData.PITCH = abs(filter.getPitch());
-  gpsData.YAW = filter.getYaw();
+  gpsData.lpPITCH = abs(filter.getRoll());
+  gpsData.lpROLL = abs(filter.getPitch());
+  gpsData.lpYAW = filter.getYaw();
 
 #if defined(AHRS_DEBUG_OUTPUT)
   Serial.print("Took "); Serial.print(millis() - timestamp); Serial.println(" ms");
 #endif
 }
 
-void sendGPS() {
-
-  // TimerA    approximately 1 second
-  if (millis() - timer > sendcycle) {
-    digitalWrite(LED, HIGH);
-    gpsData.latitudeGPS = GPS.latitude;
-    gpsData.longitudeGPS = GPS.longitude;
-    gpsData.latGPS = GPS.lat;
-    gpsData.lonGPS = GPS.lon;
-    gpsData.altitudeGPS = GPS.altitude;
-    if (counter == 3) {
-      gpsData.commandRX = 0;
-      counter = 0;
-      LED_Switch = 0;
-    }
-    if (gpsData.commandRX != 0) {
-      counter = counter + 1;
-    }
-    if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(buf), BROADCAST_ADDRESS)) {
-      Serial.println("Sending");
-    }
-    else
-    {
-      Serial.println("No reply, is server running?");
-    }
-
-    if (GPS.fix & debug == true) {
-      // print out the current stats
-      Serial.print("Location: ");
-      Serial.print(GPS.latitude, 4); Serial.print(GPS.lat);
-      Serial.print(", ");
-      Serial.print(GPS.longitude, 4); Serial.println(GPS.lon);
-      Serial.print("Speed (knots): "); Serial.println(GPS.speed);
-      //     Serial.print("Angle: "); Serial.println(GPS.angle);
-      Serial.print("Altitude: "); Serial.println(GPS.altitude);
-      Serial.print("Command: "); Serial.println(gpsData.commandRX);
-      Serial.print("Pitch: "); Serial.println(gpsData.PITCH);
-      Serial.print("Roll: "); Serial.println(gpsData.ROLL);
-      Serial.print("Yaw: "); Serial.println(gpsData.YAW);
-      //Serial.print("Satellites: "); Serial.println((int)GPS.satellites);
-      Serial.println("");
-    }
-
-
-
-    timer = millis();
-    // digitalWrite(LED, LOW);
-  }
-}
+//void sendGPS() {
+//
+//  // TimerA    approximately 1 second
+//  if (millis() - timer > sendcycle) {
+//    digitalWrite(LED, HIGH);
+//    gpsData.latitudeGPS = GPS.latitude;
+//    gpsData.longitudeGPS = GPS.longitude;
+//    gpsData.latGPS = GPS.lat;
+//    gpsData.lonGPS = GPS.lon;
+//    gpsData.altitudeGPS = GPS.altitude;
+//    if (counter == 3) {
+//      gpsData.commandRX = 0;
+//      counter = 0;
+//      LED_Switch = 0;
+//    }
+//    if (gpsData.commandRX != 0) {
+//      counter = counter + 1;
+//    }
+//    if (manager.sendto((uint8_t*)&gpsData, sizeof(buf), BROADCAST_ADDRESS)) {
+//      Serial.println("Sending");
+//    }
+//    else
+//    {
+//      Serial.println("No reply, is server running?");
+//    }
+//
+//    if (GPS.fix & debug == true) {
+//      // print out the current stats
+//      Serial.print("Location: ");
+//      Serial.print(GPS.latitude, 4); Serial.print(GPS.lat);
+//      Serial.print(", ");
+//      Serial.print(GPS.longitude, 4); Serial.println(GPS.lon);
+//      Serial.print("Speed (knots): "); Serial.println(GPS.speed);
+//      //     Serial.print("Angle: "); Serial.println(GPS.angle);
+//      Serial.print("Altitude: "); Serial.println(GPS.altitude);
+//      Serial.print("Command: "); Serial.println(gpsData.commandRX);
+//      Serial.print("Pitch: "); Serial.println(gpsData.PITCH);
+//      Serial.print("Roll: "); Serial.println(gpsData.ROLL);
+//      Serial.print("Yaw: "); Serial.println(gpsData.YAW);
+//      //Serial.print("Satellites: "); Serial.println((int)GPS.satellites);
+//      Serial.println("");
+//    }
+//
+//
+//
+//    timer = millis();
+//    // digitalWrite(LED, LOW);
+//  }
+//}

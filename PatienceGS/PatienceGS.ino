@@ -30,6 +30,10 @@ struct dataStruct {
   float ROLL;
   float PITCH;
   float YAW;
+  float rpiRX = 9;
+  float lpROLL;
+  float lpPITCH;
+  float lpYAW;
 } gpsData;
 
 void setup()
@@ -37,7 +41,7 @@ void setup()
 
   Serial.begin(115200);
   Serial1.begin(115200);
-  while (!Serial) {
+  while (!Serial & debug == true) {
     yield() ; // Wait for serial port to be available
   }
   pinMode(RFM95_RST, OUTPUT);

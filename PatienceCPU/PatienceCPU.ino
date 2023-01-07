@@ -65,6 +65,9 @@ struct TXdata {
   float PITCH;
   float YAW;
   int rpiRX = 9;
+  float lpROLL;
+  float lpPITCH;
+  float lpYAW;
 } gpsData;
 
 struct RXdata {
@@ -78,6 +81,9 @@ struct RXdata {
   float PITCH;
   float YAW;
   int rpiRX = 9;
+  float lpROLL;
+  float lpPITCH;
+  float lpYAW;
 } rxData;
 
 Adafruit_Sensor_Calibration_EEPROM cal;
@@ -228,7 +234,7 @@ void Commands() {
           Serial.println("Check Complete");
           LED_Switch = 1;
           sysCheck = 1;
-          sendcycle = 1000;
+          sendcycle = 800;
           counter = 0;
           // digitalWrite(26, HIGH);
         }
