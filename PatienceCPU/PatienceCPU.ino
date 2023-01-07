@@ -230,13 +230,14 @@ void Commands() {
           sysCheck = 1;
           sendcycle = 1000;
           counter = 0;
-          digitalWrite(26, HIGH);
+          // digitalWrite(26, HIGH);
         }
         digitalWrite(LED, HIGH);
         break;
       }
     case 2: {
         if (ignitCheck == 0) {
+	  digitalWrite (26, HIGH);
           Serial.println("Ignition");
           LED_Switch = 1;
           ignitCheck = 1;
