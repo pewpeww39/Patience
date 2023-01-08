@@ -8,8 +8,8 @@ outputPin = 19
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(inputPin, GPIO.IN)
 GPIO.setup(outputPin, GPIO.OUT)
-
-if inputPin == 1
-	os.system("libcamera-vid -t 14000 -o test.h264")
-	outputPin = 1
+while(1):
+	if inputPin == 1:
+		os.system("libcamera-vid -t 14000 -o test.h264")
+		outputPin = 1
 
