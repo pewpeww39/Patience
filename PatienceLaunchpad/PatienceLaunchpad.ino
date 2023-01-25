@@ -226,7 +226,7 @@ void Commands() {
           ignitCheck = 1;
           counter = 0;
         }
-        delay(500);
+        delay(5000);
         //int ignitCheck = 1;
         digitalWrite(GP17, HIGH);
         digitalWrite(LED, HIGH);
