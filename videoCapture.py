@@ -10,6 +10,6 @@ GPIO.setup(inputPin, GPIO.IN)
 GPIO.setup(outputPin, GPIO.OUT)
 while(1):
 	if inputPin == 1:
-		os.system("libcamera-vid -t 14000 -o test.h264")
+		os.system("libcamera-vid -t 60000 -o firstFlight.h264")
 		outputPin = 1
 
