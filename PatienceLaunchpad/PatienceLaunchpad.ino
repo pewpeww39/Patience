@@ -28,7 +28,7 @@
 #define LED 25
 #define FILTER_UPDATE_RATE_HZ 100
 #define PRINT_EVERY_N_UPDATES 10
-#define debug true
+#define debug false
 #define GP17 17
 
 Adafruit_GPS GPS(&GPSSerial);
@@ -50,9 +50,6 @@ int deployCheck = 0;
 int ignitCheck = 0;
 int sysCheck = 0;
 int sendcycle = 1500;
-float launchpadPITCH;
-float launchpadROLL;
-float launchpadYAW;
 struct dataStruct {
   float latitudeGPS;// = 1111.111111;
   float longitudeGPS;// = 1111.111111;
@@ -64,9 +61,6 @@ struct dataStruct {
   float PITCH;
   float YAW;
   int rpiRX = 9;
-  float lpROLL;
-  float lpPITCH;
-  float lpYAW;
 } gpsData;
 
 Adafruit_Sensor_Calibration_EEPROM cal;
@@ -152,7 +146,7 @@ Serial.println("Setup Complete");
 
 void loop()
 {
-  aqAHRS();
+ // aqAHRS();
   if (manager.available()) {
     uint8_t len = sizeof(buf);
     uint8_t from;
@@ -162,22 +156,17 @@ void loop()
       LED_Switch = 1;
       if (from == PATIENCE_ADDRESS) {
       memmove((uint8_t*)&gpsData, buf, sizeof(gpsData));
-      if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(buf), SERVER_ADDRESS) & debug == true) {
+      if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(buf), SERVER_ADDRESS)) {
       //manager.waitPacketSent();
       Serial.println("Forwarding DATA");
     }
       }
-    else if (from == SERVER_ADDRESS & debug == true){
+    else if (from == SERVER_ADDRESS){
      // if(manager.sendto((uint8_t*)&gpsData, sizeof(buf), PATIENCE_ADDRESS)) {
         Serial.println("Receiving cmds");  
  //           manager.waitPacketSent();
       //}
-    } //else if (debug == true){      
-      Serial.print("Pitch: "); Serial.println(gpsData.lpPITCH);
-      Serial.print("Roll: "); Serial.println(gpsData.lpROLL);
-      Serial.print("Yaw: "); Serial.println(gpsData.lpYAW);
-   // }
-    
+    }
       
     } else
     {
@@ -237,7 +226,7 @@ void Commands() {
           ignitCheck = 1;
           counter = 0;
         }
-
+        delay(500);
         //int ignitCheck = 1;
         digitalWrite(GP17, HIGH);
         digitalWrite(LED, HIGH);
@@ -296,14 +285,14 @@ void aqAHRS() {
   cal.calibrate(gyro);
   // Gyroscope needs to be converted from Rad/s to Degree/s
   // the rest are not unit-important
-  gx = gyro.gyro.x * -SENSORS_RADS_TO_DPS;
-  gy = gyro.gyro.z * -SENSORS_RADS_TO_DPS;
-  gz = gyro.gyro.y * SENSORS_RADS_TO_DPS;
+  gx = gyro.gyro.x * SENSORS_RADS_TO_DPS;
+  gy = gyro.gyro.z * SENSORS_RADS_TO_DPS;
+  gz = gyro.gyro.y * -SENSORS_RADS_TO_DPS;
 
   // Update the SensorFusion filter
   filter.update(gx, gy, gz,
-                -accel.acceleration.x, -accel.acceleration.z, accel.acceleration.y,
-                -mag.magnetic.x, -mag.magnetic.z, mag.magnetic.y);
+                accel.acceleration.x, accel.acceleration.z, - accel.acceleration.y,
+                mag.magnetic.x, mag.magnetic.z, - mag.magnetic.y);
 #if defined(AHRS_DEBUG_OUTPUT)
   Serial.print("Update took "); Serial.print(millis() - timestamp); Serial.println(" ms");
 #endif
@@ -317,9 +306,9 @@ void aqAHRS() {
 
 #if defined(AHRS_DEBUG_OUTPUT)
   Serial.print("Raw: ");
-  Serial.print(-accel.acceleration.x, 4); Serial.print(", ");
-  Serial.print(-accel.acceleration.z, 4); Serial.print(", ");
-  Serial.print(accel.acceleration.y, 4); Serial.print(", ");
+  Serial.print(accel.acceleration.x, 4); Serial.print(", ");
+  Serial.print(accel.acceleration.z, 4); Serial.print(", ");
+  Serial.print(-accel.acceleration.y, 4); Serial.print(", ");
   Serial.print(gx, 4); Serial.print(", ");
   Serial.print(gy, 4); Serial.print(", ");
   Serial.print(gz, 4); Serial.print(", ");
@@ -328,9 +317,9 @@ void aqAHRS() {
   Serial.print(-mag.magnetic.y, 4); Serial.println("");
 #endif
 
-  gpsData.lpPITCH = abs(filter.getRoll());
-  gpsData.lpROLL = abs(filter.getPitch());
-  gpsData.lpYAW = filter.getYaw();
+  gpsData.ROLL = abs(filter.getRoll());
+  gpsData.PITCH = abs(filter.getPitch());
+  gpsData.YAW = filter.getYaw();
 
 #if defined(AHRS_DEBUG_OUTPUT)
   Serial.print("Took "); Serial.print(millis() - timestamp); Serial.println(" ms");
