@@ -130,6 +130,16 @@ void loop()
         gpsData.commandTX = command; 
         if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), CLIENT_ADDRESS)) {
           if (manager.sendtoWait((uint8_t*)&gpsData, sizeof(gpsData), LAUNCHPAD_ADDRESS)) {
+            Serial.println("\n5....");
+            delay(1000);
+            Serial.println("\n4....");
+            delay(1000);
+            Serial.println("\n3....");
+            delay(1000);
+            Serial.println("\n2....");
+            delay(1000);
+            Serial.println("\n1....");
+            delay(1000);
             Serial.println("\nIgnition.");
           }
         }

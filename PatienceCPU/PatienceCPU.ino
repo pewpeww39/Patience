@@ -50,6 +50,8 @@ int deployCheck = 0;
 int ignitCheck = 0;
 int sysCheck = 0;
 int sendcycle = 1500;
+int vidStart = 26;
+int vidStatus = 0;
 //const byte PICO_I2C_ADDRESS = 0x55;
 //const byte PICO_I2C_SDA = 26;
 //const byte PICO_I2C_SCL = 27;
@@ -113,10 +115,10 @@ void setup()
 //  Wire1.onReceive(i2c_rx);
 //  Wire1.onRequest(i2c_tx);
   pinMode(LED, OUTPUT);
-  pinMode(26, OUTPUT);
+  pinMode(vidStart, OUTPUT);
   pinMode(GP17, OUTPUT);
   digitalWrite(GP17, LOW);
-  digitalWrite(26, LOW);
+  digitalWrite(vidStart, LOW);
   digitalWrite(LED, LOW);
   while (!Serial & debug == true) {
     yield();
@@ -217,6 +219,7 @@ void loop()
   }
   Commands();
   sendGPS();
+  
 
 }
 
@@ -236,18 +239,17 @@ void Commands() {
           sysCheck = 1;
           sendcycle = 800;
           counter = 0;
-          // digitalWrite(26, HIGH);
         }
         digitalWrite(LED, HIGH);
         break;
       }
     case 2: {
         if (ignitCheck == 0) {
-	  digitalWrite (26, HIGH);
           Serial.println("Ignition");
           LED_Switch = 1;
           ignitCheck = 1;
-          counter = 0;
+          counter = 0;          
+          digitalWrite(vidStart, HIGH);
         }
 
         //int ignitCheck = 1;
@@ -272,6 +274,7 @@ void Commands() {
         ignitCheck = 0;
         deployCheck = 0;
         sendcycle = 2500;
+        digitalWrite(vidStart, LOW);
         break;
       }
     default: {
@@ -395,7 +398,13 @@ void sendGPS() {
       Serial.println("");
     }
 
-
+    if (digitalRead(vidStart) == 1) {
+      vidStatus = 1;
+    }
+    else {
+      vidStatus = 0;
+    }
+    Serial.println(vidStatus);
 
     timer = millis();
     digitalWrite(LED, LOW);
